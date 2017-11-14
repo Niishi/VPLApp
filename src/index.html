@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <meta charset="utf-8"/>
+  <link rel="stylesheet" href="css/master.css">
+
+  <!-- ライブラリ -->
+  <script src="lib/jquery-3.2.1.min.js"></script>
+  <!--本体モジュール-->
+  <script src="blockly/blockly_compressed.js"></script>
+  <!--Blockモジュール-->
+  <script src="blockly/blocks_compressed.js"></script>
+  <script src="blockly/p5js_compressed.js"></script>
+  <!--Block定義モジュール-->
+  <script src="blockly/blocks/logic.js"></script>
+  <script src="blockly/blocks/math.js"></script>
+  <script src="blockly/blocks/lists.js"></script>
+  <script src="blockly/blocks/variables.js"></script>
+  <script src="blockly/blocks/procedures.js"></script>
+
+
+  <script src="blockly/blocks/setup.js"></script>
+  <script src="blockly/blocks/size.js"></script>
+  <script src="blockly/blocks/background.js"></script>
+  <script src="blockly/blocks/fill.js"></script>
+  <script src="blockly/blocks/fill1.js"></script>
+  <script src="blockly/blocks/rect.js"></script>
+  <script src="blockly/blocks/ellipse.js"></script>
+  <script src="blockly/blocks/noFill.js"></script>
+  <script src="blockly/blocks/stroke1.js"></script>
+  <script src="blockly/blocks/clear.js"></script>
+  <script src="blockly/blocks/createCanvas.js"></script>
+  <script src="blockly/blocks/createCanvas1.js"></script>
+
+  <!--ソースコードジェネレーターモジュール-->
+  <script src="blockly/generators/p5js/logic.js"></script>
+  <script src="blockly/generators/p5js/math.js"></script>
+  <script src="blockly/generators/p5js/lists.js"></script>
+  <script src="blockly/generators/p5js/variables.js"></script>
+  <script src="blockly/generators/p5js/procedures.js"></script>
+
+
+  <script src="blockly/generators/p5js/setup.js"></script>
+  <script src="blockly/generators/p5js/size.js"></script>
+  <script src="blockly/generators/p5js/background.js"></script>
+  <script src="blockly/generators/p5js/fill.js"></script>
+  <script src="blockly/generators/p5js/fill1.js"></script>
+  <script src="blockly/generators/p5js/rect.js"></script>
+  <script src="blockly/generators/p5js/ellipse.js"></script>
+  <script src="blockly/generators/p5js/noFill.js"></script>
+  <script src="blockly/generators/p5js/stroke1.js"></script>
+  <script src="blockly/generators/p5js/clear.js"></script>
+  <script src="blockly/generators/p5js/createCanvas.js"></script>
+  <script src="blockly/generators/p5js/createCanvas1.js"></script>
+
+  <!--翻訳-->
+  <script src="blockly/msg/js/ja.js"></script>
+  <script src="p5.js"></script>
+  <link rel="stylesheet" href="test.css">
+
+  <script>window.$ = window.jQuery = require('jquery');</script>
+      <script id="sketchjs" src="sketch.js"></script>
+
+
+</head>
+<body>
+  <div id="blocklyDiv"></div>
+  <form name="fm">
+  <textarea id="outputArea" rows="10"></textarea>
+  </form>
+
+  <div id="p5Canvas"></div>
+
+  <input type="textArea" id="blockTextBox">
+
+  <input type="button" value="実行" onclick="run(event)">
+
+  <!-- </div> -->
+  <!--ツールボックス-->
+  <xml id="toolbox" style="display: none">
+    <category name="p5js">
+        <category name="Color">
+            <category name="settings">
+                <block type="background"></block>
+                <block type="fill"></block>
+                <block type="void_fill"></block>
+                <block type="void_stroke"></block>
+                <block type="void_noFill"></block>
+                <block type="void_noStroke"></block>
+            </category>
+        </category>
+        <category name="IF">
+            <block type="controls_if"></block>
+            <block type="controls_ifelse"></block>
+            <block type="logic_compare"></block>
+            <block type="logic_operation"></block>
+            <block type="logic_negate"></block>
+            <block type="logic_boolean"></block>
+            <block type="logic_null"></block>
+            <block type="logic_ternary"></block>
+        </category>
+        <category name = "LOOP">
+            <block type="controls_repeat_ext"></block>
+            <block type="controls_repeat"></block>
+            <block type="controls_whileUntil"></block>
+            <block type="controls_for"></block>
+            <block type="controls_forEach"></block>
+            <block type="controls_flow_statements"></block>
+        </category>
+        <category name = "Variables">
+            <block type="variables_set"></block>
+            <block type="variables_get"></block>
+        </category>
+        <category name = "Procedures">
+            <block type="procedures_defreturn"></block>
+            <block type="procedures_defnoreturn"></block>
+            <block type="procedures_callreturn"></block>
+            <block type="procedures_callnoreturn"></block>
+            <block type="procedures_ifreturn"></block>
+        </category>
+        <category name = "math">
+            <block type="math_number"></block>
+            <block type="math_arithmetic"></block>
+            <block type="math_single"></block>
+            <block type="math_constant"></block>
+            <block type="math_number_property"></block>
+            <block type="math_change"></block>
+            <block type="math_round"></block>
+            <block type="math_trig"></block>
+            <block type="math_on_list"></block>
+            <block type="math_modulo"></block>
+            <block type="math_constrain"></block>
+            <block type="math_random_int"></block>
+            <block type="math_random_float"></block>
+        </category>
+        <block type="setup"></block>
+        <block type="draw"></block>
+        <block type="size"></block>
+        <block type="rect"></block>
+        <block type="void_ellipse"></block>
+        <block type="void_createCanvas"></block>
+        <block type="Canvas_createCanvas"></block>
+    </category>
+  </xml>
+
+  <script src="script.js"></script>
+  <script type="text/javascript" src="processing-helper.js"></script>
+
+</body>

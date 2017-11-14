@@ -1,0 +1,12 @@
+{
+  "name": "VPLEditor",
+  "version": "0.0.1",
+  "main": "main.js",
+  "author": "Yuya Yamanashi",
+  "devDependencies": {
+    "electron": "1.4.15"
+  },
+  "dependencies": {
+    "jquery": "^3.2.1"
+  }
+}

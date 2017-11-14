@@ -1,0 +1,37 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+table {
+  height: 100%;
+  width: 100%;
+}
+
+#blocklyArea {
+  height: 99%;
+  background: #888888;
+  text-align: center;
+}
+#outputArea{
+    float: right;
+    width: 49%;
+    height: 50%;
+}
+#blockTextBox{
+    position: absolute;
+    left: 80px;
+    top: 40px;
+    visibility: hidden;
+}
+
+#blocklyDiv{
+    float: left;
+    width: 50%;
+    height: 99%;
+}
+#p5Canvas{
+    float:right;
+    width: 40%;
+    height: 50%;
+}
