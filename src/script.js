@@ -11,6 +11,8 @@ var workspace = Blockly.inject(blocklyDiv, {
     },
     trashcan: true
 });
+
+
 var workspaceOffset = workspace.getOriginOffsetInPixels();
 function changeEvent(e) {
     var code = Blockly.p5js.workspaceToCode(workspace);
@@ -68,8 +70,6 @@ document.getElementById("blockTextBox").oninput = function(event) {
             block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
             block.initSvg();
             block.render();
-
-
             const parentBlock = getSelectedBlock();
             if(parentBlock !== null && block.previousConnection !== null){
                 if(parentBlock.inputList[0].connection != null){
@@ -78,25 +78,24 @@ document.getElementById("blockTextBox").oninput = function(event) {
                     block.previousConnection.connect(parentBlock.nextConnection);
                 }
             }
-
             textBox.style.visibility = "hidden";
         }
     }
 }
+
 document.getElementById("blockTextBox").onkeypress = function(e){
     var textBox = document.getElementById("blockTextBox");
     var clientRect = textBox.getBoundingClientRect();
     if ( e.keyCode === 13 ) {
-        var block = new Blockly.BlockSvg(workspace, "math_number");
+        var block = calc(textBox.value);
         block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
         block.initSvg();
         block.render();
 
-        block.inputList[0].fieldRow[0].setValue(textBox.value);
         var xy = block.getRelativeToSurfaceXY();
         var connectionDB = block.outputConnection.dbOpposite_;
         var closestConnection = connectionDB.searchForClosest(block.outputConnection, 3000, new goog.math.Coordinate(0,0)).connection;
-        if(closestConnection !== null){
+        if(closestConnection !== null && closestConnection.targetConnection === null){
             block.outputConnection.connect(closestConnection);
         }
         textBox.style.visibility = "hidden";
