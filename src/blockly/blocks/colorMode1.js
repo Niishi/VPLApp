@@ -1,4 +1,4 @@
-Blockly.Blocks["void_colorMode"] = {
+Blockly.Blocks["colorMode"] = {
 	init: function(){
 		this.appendDummyInput()
 			.appendField("colorMode")

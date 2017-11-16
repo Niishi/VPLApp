@@ -1,3 +1,5 @@
+var blockList = ["setup","size", "draw", "fill","background","ellipse","rect","stroke", "noFill","noStroke"];
+
 var blocklyDiv = document.getElementById("blocklyDiv");
 var workspace = Blockly.inject(blocklyDiv, {
     toolbox: document.getElementById('toolbox'),
@@ -17,12 +19,12 @@ function changeEvent(e) {
 
     //ブロック生成時のイベントを設定
     if(e.type === Blockly.Events.CREATE){
-        const selectBlock = workspace.getBlockById(e.blockId);
+        var selectBlock = workspace.getBlockById(e.blockId);
+        // selectBlock.setShadow(true);
     }
-    topBlocks = workspace.getTopBlocks();
-    for (block of topBlocks) {
-        // block.setShadow(true);
-    }
+    // topBlocks = workspace.getTopBlocks();
+    // for (block of topBlocks) {
+    // }
     // for (var block in topBlocks) {
     //     if (topBlocks.hasOwnProperty(block)) {
     //         topBlocks[block].moveBy(1000,1000);
@@ -60,36 +62,25 @@ document.getElementById("blocklyDiv").ondblclick = function (event) {
 document.getElementById("blockTextBox").oninput = function(event) {
     var textBox = document.getElementById("blockTextBox");
     var clientRect = textBox.getBoundingClientRect();
-    if(textBox.value == "setup()"){
-        var block = new Blockly.BlockSvg(workspace, "setup");
-        block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
-        block.initSvg();
-        block.render();
-        textBox.style.visibility = "hidden";
-    }else if(textBox.value == "draw()"){
-        var block = new Blockly.BlockSvg(workspace, "draw");
-        block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
-        block.initSvg();
-        block.render();
-        textBox.style.visibility = "hidden";
-    }else if(textBox.value == "background()"){
-        var block = new Blockly.BlockSvg(workspace, "background");
-        var parentBlock = getSelectedBlock();
-        block.initSvg();
-        block.render();
-        if(parentBlock == null){
+    for(blockName of blockList){
+        if(textBox.value == blockName + "()"){
+            var block = new Blockly.BlockSvg(workspace, blockName);
             block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
-        }else{
-            block.previousConnection.connect(parentBlock.inputList[0].connection);
+            block.initSvg();
+            block.render();
+
+
+            const parentBlock = getSelectedBlock();
+            if(parentBlock !== null && block.previousConnection !== null){
+                if(parentBlock.inputList[0].connection != null){
+                    block.previousConnection.connect(parentBlock.inputList[0].connection);
+                }else if(parentBlock.nextConnection !== null){
+                    block.previousConnection.connect(parentBlock.nextConnection);
+                }
+            }
+
+            textBox.style.visibility = "hidden";
         }
-        textBox.style.visibility = "hidden";
-    }else if(textBox.value == "stroke()"){
-        var block = new Blockly.BlockSvg(workspace, "void_stroke");
-        block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
-        block.initSvg();
-        block.render();
-        textBox.style.visibility = "hidden";
-        console.log(block);
     }
 }
 document.getElementById("blockTextBox").onkeypress = function(e){
@@ -101,14 +92,12 @@ document.getElementById("blockTextBox").onkeypress = function(e){
         block.initSvg();
         block.render();
 
+        block.inputList[0].fieldRow[0].setValue(textBox.value);
         var xy = block.getRelativeToSurfaceXY();
         var connectionDB = block.outputConnection.dbOpposite_;
         var closestConnection = connectionDB.searchForClosest(block.outputConnection, 3000, new goog.math.Coordinate(0,0)).connection;
         if(closestConnection !== null){
-            console.log("aaa");
             block.outputConnection.connect(closestConnection);
-        }else{
-            console.log("connection is null");
         }
         textBox.style.visibility = "hidden";
     }

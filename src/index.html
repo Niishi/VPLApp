@@ -81,12 +81,7 @@
     <canvas id="sketch" width="100" height="100"></canvas>
   </div>
 
-
-  <div id="blockTextBox" class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-      <input class="mdl-textfield__input" type="text" id="sample3">
-      <label class="mdl-textfield__label" for="sample3">Text...</label>
-  </div>
-  <!-- <input type="textArea" id="blockTextBox"> -->
+  <input type="textArea" id="blockTextBox">
 
   <!-- <input type="button" value="実行" onclick="run(event)"> -->
   <input type="button" value="実行" onclick="runCode()">
@@ -102,9 +97,9 @@
                 <block type="background"></block>
                 <block type="fill"></block>
                 <block type="void_fill"></block>
-                <block type="void_stroke"></block>
-                <block type="void_noFill"></block>
-                <block type="void_noStroke"></block>
+                <block type="stroke"></block>
+                <block type="noFill"></block>
+                <block type="noStroke"></block>
             </category>
         </category>
         <category name="IF">
@@ -155,7 +150,7 @@
         <block type="draw"></block>
         <block type="size"></block>
         <block type="rect"></block>
-        <block type="void_ellipse"></block>
+        <block type="ellipse"></block>
         <block type="void_createCanvas"></block>
         <block type="Canvas_createCanvas"></block>
     </category>
@@ -163,7 +158,6 @@
 
   <script src="script.js"></script>
   <script type="text/javascript" src="processing.min.js"></script>
-
   <script type="text/javascript" src="processing-helper.js"></script>
 
 </body>

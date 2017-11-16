@@ -1,4 +1,4 @@
-Blockly.Blocks["void_stroke"] = {
+Blockly.Blocks["stroke"] = {
 	init: function(){
 		this.appendDummyInput()
 			.appendField("stroke")

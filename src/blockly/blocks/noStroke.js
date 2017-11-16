@@ -1,4 +1,4 @@
-Blockly.Blocks["void_noStroke"] = {
+Blockly.Blocks["noStroke"] = {
 	init: function(){
 		this.appendDummyInput()
 			.appendField("noStroke")
