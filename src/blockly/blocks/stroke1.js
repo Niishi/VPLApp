@@ -3,13 +3,13 @@ Blockly.Blocks["void_stroke"] = {
 		this.appendDummyInput()
 			.appendField("stroke")
 		this.appendValueInput("input_0")
-			.setCheck("Num")
+			.setCheck("Number")
 			.appendField("red")
 		this.appendValueInput("input_1")
-			.setCheck("Num")
+			.setCheck("Number")
 			.appendField("green")
 		this.appendValueInput("input_2")
-			.setCheck("Num")
+			.setCheck("Number")
 			.appendField("blue")
 		this.setColour(230);
 		this.setInputsInline(true);

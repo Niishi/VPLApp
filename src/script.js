@@ -9,17 +9,16 @@ var workspace = Blockly.inject(blocklyDiv, {
     },
     trashcan: true
 });
-var connectionDB = new Blockly.ConnectionDB();
-
+var workspaceOffset = workspace.getOriginOffsetInPixels();
 function changeEvent(e) {
     var code = Blockly.p5js.workspaceToCode(workspace);
     document.getElementById("outputArea").value = code;
-    //   run();
-    // if(e.type === Blockly.Events.CREATE){
-    //     const selectBlock = workspace.getBlockById(e.blockId);
-    //     selectBlock.setColour("#6DC16B");
-    //     selectBlock.setShadow(false);
-    // }
+    runCode();
+
+    //ブロック生成時のイベントを設定
+    if(e.type === Blockly.Events.CREATE){
+        const selectBlock = workspace.getBlockById(e.blockId);
+    }
     topBlocks = workspace.getTopBlocks();
     for (block of topBlocks) {
         // block.setShadow(true);
@@ -57,18 +56,19 @@ document.getElementById("blocklyDiv").ondblclick = function (event) {
     }
 }
 
+
 document.getElementById("blockTextBox").oninput = function(event) {
     var textBox = document.getElementById("blockTextBox");
     var clientRect = textBox.getBoundingClientRect();
     if(textBox.value == "setup()"){
         var block = new Blockly.BlockSvg(workspace, "setup");
-        block.moveBy(clientRect.left, clientRect.top);
+        block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
         block.initSvg();
         block.render();
         textBox.style.visibility = "hidden";
     }else if(textBox.value == "draw()"){
         var block = new Blockly.BlockSvg(workspace, "draw");
-        block.moveBy(clientRect.left, clientRect.top);
+        block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
         block.initSvg();
         block.render();
         textBox.style.visibility = "hidden";
@@ -78,14 +78,14 @@ document.getElementById("blockTextBox").oninput = function(event) {
         block.initSvg();
         block.render();
         if(parentBlock == null){
-            block.moveBy(clientRect.left, clientRect.top);
+            block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
         }else{
             block.previousConnection.connect(parentBlock.inputList[0].connection);
         }
         textBox.style.visibility = "hidden";
     }else if(textBox.value == "stroke()"){
         var block = new Blockly.BlockSvg(workspace, "void_stroke");
-        block.moveBy(clientRect.left, clientRect.top);
+        block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
         block.initSvg();
         block.render();
         textBox.style.visibility = "hidden";
@@ -95,23 +95,30 @@ document.getElementById("blockTextBox").oninput = function(event) {
 document.getElementById("blockTextBox").onkeypress = function(e){
     var textBox = document.getElementById("blockTextBox");
     var clientRect = textBox.getBoundingClientRect();
-    console.log(connectionDB);
     if ( e.keyCode === 13 ) {
         var block = new Blockly.BlockSvg(workspace, "math_number");
-        block.moveBy(clientRect.left, clientRect.top);
+        block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
         block.initSvg();
         block.render();
 
         var xy = block.getRelativeToSurfaceXY();
-        var closestConnection = connectionDB.searchForClosest(block.outputConnection, 3000, block.getRelativeToSurfaceXY()).connection;
-        console.log(connectionDB.searchForClosest(block.outputConnection, 3000, block.getRelativeToSurfaceXY()));
+        var connectionDB = block.outputConnection.dbOpposite_;
+        var closestConnection = connectionDB.searchForClosest(block.outputConnection, 3000, new goog.math.Coordinate(0,0)).connection;
         if(closestConnection !== null){
+            console.log("aaa");
             block.outputConnection.connect(closestConnection);
         }else{
             console.log("connection is null");
         }
         textBox.style.visibility = "hidden";
     }
+    if(e.keyCode === 108){
+        var allBlocks = workspace.getAllBlocks();
+        for(block of allBlocks){
+            console.log(block);
+        }
+    }
+
 }
 
 function getSelectedBlock() {
@@ -154,6 +161,11 @@ function readFile(path) {
         }
         document.getElementById("outputArea").value = text;
     });
+}
+
+function runCode() {
+    window.sketchCode = document.getElementById("outputArea").value;
+    runSketch();
 }
 
 function setBlobUrl(id, content) {
