@@ -12,6 +12,16 @@ button, input, select, textarea {
   font-size   : 100%;
 }
 
+#input_area {
+    height: 50%;
+}
+
+#input_txt {
+    width: 48%;
+    height: 100%;
+}
+
+
 #blocklyArea {
   height: 99%;
   background: #888888;
@@ -47,4 +57,9 @@ border: solid 2px #666;
     float:right;
     width: 40%;
     height: 50%;
+}
+
+.highlight_line {
+    background-color: #f2dede;
+    position: absolute;
 }

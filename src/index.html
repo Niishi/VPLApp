@@ -5,7 +5,17 @@
   <link rel="stylesheet" href="css/master.css">
 
   <!-- ライブラリ -->
+  <!-- jQuery -->
   <script src="lib/jquery-3.2.1.min.js"></script>
+  <!-- Ace -->
+  <script src="lib/ace/ace.js"></script>
+  <script src="lib/ace/mode-javascript.js"></script>
+  <script src="lib/ace/theme-github.js"></script>
+  <script src="editor.js"></script>
+  <!-- Esprima -->
+  <script src="lib/esprima.js"></script>
+  <script src="lib/estraverse.js"></script>
+
   <!--本体モジュール-->
   <script src="blockly/blockly_compressed.js"></script>
   <!--Blockモジュール-->
@@ -69,25 +79,28 @@
 
 
 </head>
-<body>
+<body onload="onLoad()">
     <div id="sketchjs-container">
         <script id="sketchjs" src="sketch.js"></script>
     </div>
   <div id="blocklyDiv"></div>
 
-  <form name="fm">
+  <!-- <form name="fm">
   <textarea id="outputArea" rows="10"></textarea>
-  </form>
+  </form> -->
 
   <!-- <div id="p5Canvas"></div> -->
-
+  <div id="input_area">
+        <div id="input_txt"></div>
+    </div>
   <div id="sketch-container">
     <div id="sketch" width="500" height="500"></div>
   </div>
 
   <input type="textArea" id="blockTextBox">
 
-  <textarea rows="8" cols="80" id="output" readonly="readonly"></textarea>
+
+  <!-- <textarea rows="8" cols="80" id="output" readonly="readonly"></textarea> -->
 
   <!-- </div> -->
   <!--ツールボックス-->

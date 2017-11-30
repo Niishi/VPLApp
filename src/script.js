@@ -12,17 +12,35 @@ var workspace = Blockly.inject(blocklyDiv, {
     trashcan: true
 });
 
+var rangeId;
 
 var workspaceOffset = workspace.getOriginOffsetInPixels();
 function changeEvent(e) {
     var code = Blockly.p5js.workspaceToCode(workspace);
-    document.getElementById("outputArea").value = code;
+    var editor = getAceEditor();
+    editor.setValue(code,-1);
     runCode();
 
     //ブロック生成時のイベントを設定
     if(e.type === Blockly.Events.CREATE){
         var selectBlock = workspace.getBlockById(e.blockId);
-        // selectBlock.setShadow(true);
+    }
+    if(e.type === Blockly.Events.MOVE){
+        var block = workspace.getBlockById(e.blockId);
+        var text = Blockly.p5js.blockToCode(block);
+        var editor = getAceEditor();
+        var editSession = editor.getSession();
+        var search = new Search();
+        searchOption.needle = text;
+        search.set(searchOption);
+        var range = search.find(editSession);
+        if(rangeId){
+            editSession.removeMarker(rangeId);
+        }
+        if(range){
+            range = editSession.highlightLines(range.start.row, range.end.row-1, "highlight_line");
+            rangeId = range.id;
+        }
     }
     // topBlocks = workspace.getTopBlocks();
     // for (block of topBlocks) {
@@ -143,11 +161,59 @@ document.getElementById("blockTextBox").oninput = function(event) {
         }
     }
 }
+var Search = require('ace/search').Search;
+var Range = require('ace/range').Range;
+var searchOption = {
+    needle : "function",
+    backwards : false,
+    wrap : true,
+    caseSensitive : true,
+    wholeWord : true,
+    range : null,
+    regExp : false
+};
+
+
+
+
+//ソースコード変換部
+
+const esprima = require('esprima');
+const estraverse = require('estraverse');
+var program = "const answer = 42;";
+var ast = esprima.parse(program);
+
+function get_node_info (node) {
+	switch (node.type) {
+		case 'Identifier':
+			return node.name;
+		case 'ExpressionStatement':
+			return node.body;
+		case 'FunctionDeclaration':
+			return node.id;
+		case 'Literal':
+			return node.value;
+		default:
+			return node.type;
+	}
+}
+estraverse.traverse(ast, {
+	enter: function (node, parent) {
+		console.log('[enter] ', node.type, ':', get_node_info(node))
+	},
+	leave: function (node, parent) {
+		console.log('[leave] ', node.type, ':', get_node_info(node))
+	}
+});
+
+//ここまで
+
+
 
 document.getElementById("blockTextBox").onkeypress = function(e){
     var textBox = document.getElementById("blockTextBox");
     var clientRect = textBox.getBoundingClientRect();
-    if ( e.keyCode === 13 ) {
+    if ( e.keyCode === 13 ) {   //エンターキーが押されたとき
         var block = calc(textBox.value);
         block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
         block.initSvg();
@@ -202,13 +268,18 @@ function loadScript(path, callback) {
 
 readFile("./src/sketch.js");
 function readFile(path) {
-    fs.readFile(path, function(error, text) {
+    fs.readFile(path, function(error, buffer) {
         if (error != null) {
             alert("error : " + error);
             return;
         }
-        document.getElementById("outputArea").value = text;
+        var editor = getAceEditor();
+        var text = buffer.toString('utf-8',0,buffer.length);    //Bufferのままではaceのエディタに設定できないので文字列に変換している
+        editor.setValue(text,-1);
     });
+}
+function getAceEditor() {
+    return ace.edit("input_txt");
 }
 
 function runCode() {
