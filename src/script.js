@@ -60,6 +60,67 @@ document.getElementById("blocklyDiv").ondblclick = function (event) {
     }
 }
 
+//このままだとテキストエディタに入力しているときもイベントが発火してしまう
+document.onkeydown  = function (e) {
+    var selectedBlock = getSelectedBlock();
+    if(selectedBlock !== null){
+        if (e.keyCode == '38') {
+            // up arrow
+            var prevConn = selectedBlock.previousConnection;
+            if(prevConn !== null && prevConn.isConnected()){
+
+                var prevBlock = prevConn.targetBlock();
+
+                var prevprevConn = prevBlock.previousConnection;
+                var nextConn = selectedBlock.nextConnection;
+                prevConn.disconnect();
+                if(prevprevConn !== null && prevprevConn.isConnected()){
+                    var prevprevBlock = prevprevConn.targetBlock();
+                    prevprevConn.disconnect();
+                    prevConn.connect(prevprevBlock.nextConnection);
+                }
+                if(nextConn !== null && nextConn.isConnected()){
+                    var nextBlock = nextConn.targetBlock();
+                    nextConn.disconnect();
+                    nextBlock.previousConnection.connect(prevBlock.nextConnection);
+                }
+                prevBlock.previousConnection.connect(selectedBlock.nextConnection);
+                // prevprevConn.connect(nextConn);
+            }
+        }
+        else if (e.keyCode == '40') {
+            // down arrow
+            var nextConn = selectedBlock.nextConnection;
+            if(nextConn !== null && nextConn.isConnected()){
+
+                var nextBlock = nextConn.targetBlock();
+
+                var nextnextConn = nextBlock.nextConnection;
+                var prevConn = selectedBlock.previousConnection;
+                nextConn.disconnect();
+                if(nextnextConn !== null && nextnextConn.isConnected()){
+                    var nextnextBlock = nextnextConn.targetBlock();
+                    nextnextConn.disconnect();
+                    nextnextBlock.previousConnection.connect(nextConn);
+                }
+                if(prevConn !== null && prevConn.isConnected()){
+                    var prevBlock = prevConn.targetBlock();
+                    prevConn.disconnect();
+                    nextBlock.previousConnection.connect(prevBlock.nextConnection);
+                }
+                prevConn.connect(nextnextConn);
+                // prevprevConn.connect(nextConn);
+            }
+        }
+        else if (e.keyCode == '37') {
+           // left arrow
+        }
+        else if (e.keyCode == '39') {
+           // right arrow
+        }
+    }
+}
+
 
 document.getElementById("blockTextBox").oninput = function(event) {
     var textBox = document.getElementById("blockTextBox");
@@ -140,7 +201,6 @@ function loadScript(path, callback) {
 }
 
 readFile("./src/sketch.js");
-
 function readFile(path) {
     fs.readFile(path, function(error, text) {
         if (error != null) {
@@ -152,8 +212,15 @@ function readFile(path) {
 }
 
 function runCode() {
-    window.sketchCode = document.getElementById("outputArea").value;
-    runSketch();
+    // saveCode();
+    $("#sketch").remove();
+    $("#sketch-container").append('<div id="sketch" width="500" height="500"></div>');
+    // $("#sketchjs").remove();
+    // $("#sketchjs-container").append('<script id="sketchjs" src="sketch.js"></script>');
+    // draw();
+
+    // window.sketchCode = document.getElementById("outputArea").value;
+    // runSketch();
 }
 
 function setBlobUrl(id, content) {

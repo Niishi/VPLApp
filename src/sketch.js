@@ -1,7 +1,13 @@
-void setup(){
-    size(500,500);
+function setup(){
+    var canvas = createCanvas(500,500);
+    canvas.parent('sketch');
 }
 
-void draw(){
-    background(150);
+var x = 0;
+function draw(){
+    background(255,0,255);
+    noStroke();
+    rect(x, 250, 200,200);
+    x += 1;
+    if(x > 500)x = -200;
 }

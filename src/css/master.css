@@ -7,6 +7,10 @@ table {
   height: 100%;
   width: 100%;
 }
+button, input, select, textarea {
+  font-family : inherit;
+  font-size   : 100%;
+}
 
 #blocklyArea {
   height: 99%;
@@ -22,12 +26,14 @@ table {
     position: absolute;
     left: 80px;
     top: 40px;
+    font-size: 18px;
     border-radius: 3px;
     visibility: hidden;
 }
 #blockTextBox:focus {
 /*フォーカスした時に影をつける*/
-box-shadow: 0px 5px 10px 0px rgba(0,0,0,0.4);
+border: 0px;
+box-shadow: 0px 0px 5px 5px rgba(0,0,0,0.2);
 /*フォーカスした時に枠線を太く濃く*/
 border: solid 2px #666;
 }

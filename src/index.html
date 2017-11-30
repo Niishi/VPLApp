@@ -59,7 +59,7 @@
   <link rel="stylesheet" href="test.css">
 
   <script>window.$ = window.jQuery = require('jquery');</script>
-  <script id="sketchjs" src="sketch.js"></script>
+
 
   <link rel="stylesheet" href="./lib/mdl/material.min.css">
   <script src="./lib/mdl/material.min.js"></script>
@@ -70,7 +70,9 @@
 
 </head>
 <body>
-
+    <div id="sketchjs-container">
+        <script id="sketchjs" src="sketch.js"></script>
+    </div>
   <div id="blocklyDiv"></div>
 
   <form name="fm">
@@ -80,13 +82,10 @@
   <!-- <div id="p5Canvas"></div> -->
 
   <div id="sketch-container">
-    <canvas id="sketch" width="100" height="100"></canvas>
+    <div id="sketch" width="500" height="500"></div>
   </div>
 
   <input type="textArea" id="blockTextBox">
-
-  <!-- <input type="button" value="実行" onclick="run(event)"> -->
-  <input type="button" value="実行" onclick="runCode()">
 
   <textarea rows="8" cols="80" id="output" readonly="readonly"></textarea>
 
