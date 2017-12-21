@@ -1,4 +1,3 @@
-var blockList = ["setup","size", "draw", "fill","background","ellipse","rect","stroke", "noFill","noStroke"];
 
 var blocklyDiv = document.getElementById("blocklyDiv");
 var workspace = Blockly.inject(blocklyDiv, {
@@ -13,13 +12,14 @@ var workspace = Blockly.inject(blocklyDiv, {
 });
 
 var rangeId;
-
 var workspaceOffset = workspace.getOriginOffsetInPixels();
 function changeEvent(e) {
     var code = Blockly.p5js.workspaceToCode(workspace);
     var editor = getAceEditor();
+    var cursorPosition = editor.getCursorPosition();
     editor.setValue(code,-1);
-    runCode();
+    editor.moveCursorToPosition(cursorPosition);
+    // runCode();
 
     //ブロック生成時のイベントを設定
     if(e.type === Blockly.Events.CREATE){
@@ -31,6 +31,9 @@ function changeEvent(e) {
         var editor = getAceEditor();
         var editSession = editor.getSession();
         var search = new Search();
+        text = "  for (var count = 0; count < 10; count++) {\n" +
+            "    rect(100, 100, 300, 200);\n" +
+            "  }";
         searchOption.needle = text;
         search.set(searchOption);
         var range = search.find(editSession);
@@ -38,10 +41,14 @@ function changeEvent(e) {
             editSession.removeMarker(rangeId);
         }
         if(range){
-            range = editSession.highlightLines(range.start.row, range.end.row-1, "highlight_line");
-            rangeId = range.id;
+            rangeId = editSession.addMarker(range, "highlight_line", "text");
+            // range = editSession.highlightLines(range.start.row, range.end.row-1, "highlight_line");
+            // rangeId = range.id;
+        }else{
+            console.log("Not Found : " + text);
         }
     }
+    run();
     // topBlocks = workspace.getTopBlocks();
     // for (block of topBlocks) {
     // }
@@ -58,11 +65,16 @@ workspace.addChangeListener(changeEvent);
 var Pjs;
 
 function run() {
-    saveCode();
-    // location.reload();
-    loadScript("./src/sketch.js", function() {
-        console.log('script loaded');
-    });
+
+    // runCode();
+    // saveCode();
+    // // // location.reload();
+    // loadScript("./src/sketch.js", function() {
+    //     console.log('script loaded');
+    // });
+    // var codeText = getAceEditor().getValue();
+    // eval(codeText);
+
 }
 
 document.getElementById("blocklyDiv").ondblclick = function (event) {
@@ -139,6 +151,8 @@ document.onkeydown  = function (e) {
     }
 }
 
+var blockList = ["setup","size", "draw", "fill","background","ellipse","rect","stroke", "noFill","noStroke"];
+
 
 document.getElementById("blockTextBox").oninput = function(event) {
     var textBox = document.getElementById("blockTextBox");
@@ -167,48 +181,11 @@ var searchOption = {
     needle : "function",
     backwards : false,
     wrap : true,
-    caseSensitive : true,
-    wholeWord : true,
+    caseSensitive : false,
+    wholeWord : false,
     range : null,
     regExp : false
 };
-
-
-
-
-//ソースコード変換部
-
-const esprima = require('esprima');
-const estraverse = require('estraverse');
-var program = "const answer = 42;";
-var ast = esprima.parse(program);
-
-function get_node_info (node) {
-	switch (node.type) {
-		case 'Identifier':
-			return node.name;
-		case 'ExpressionStatement':
-			return node.body;
-		case 'FunctionDeclaration':
-			return node.id;
-		case 'Literal':
-			return node.value;
-		default:
-			return node.type;
-	}
-}
-estraverse.traverse(ast, {
-	enter: function (node, parent) {
-		console.log('[enter] ', node.type, ':', get_node_info(node))
-	},
-	leave: function (node, parent) {
-		console.log('[leave] ', node.type, ':', get_node_info(node))
-	}
-});
-
-//ここまで
-
-
 
 document.getElementById("blockTextBox").onkeypress = function(e){
     var textBox = document.getElementById("blockTextBox");
@@ -241,7 +218,7 @@ function getSelectedBlock() {
 }
 
 function saveCode() {
-    var codeText = document.getElementById("outputArea").value;
+    var codeText = editor.getValue();
     saveFile("./src/sketch.js", codeText);
 }
 
@@ -262,7 +239,7 @@ const fs = require('fs');
 const ipc = require('electron').ipcRenderer;
 function loadScript(path, callback) {
     $('#sketchjs').remove();
-    $('head').append('<script id="sketchjs" src="sketch.js"></script>');
+    $('#sketchjs-container').append('<script id="sketchjs" src="sketch.js"></script>');
     callback();
 }
 
@@ -276,6 +253,7 @@ function readFile(path) {
         var editor = getAceEditor();
         var text = buffer.toString('utf-8',0,buffer.length);    //Bufferのままではaceのエディタに設定できないので文字列に変換している
         editor.setValue(text,-1);
+        editor.blur();
     });
 }
 function getAceEditor() {
@@ -286,6 +264,8 @@ function runCode() {
     // saveCode();
     $("#sketch").remove();
     $("#sketch-container").append('<div id="sketch" width="500" height="500"></div>');
+
+    $("#sketch").append('<canvas id="defaultCanvas0" style="width: 500px; height: 500px;" width="500" height="500"></canvas>');
     // $("#sketchjs").remove();
     // $("#sketchjs-container").append('<script id="sketchjs" src="sketch.js"></script>');
     // draw();

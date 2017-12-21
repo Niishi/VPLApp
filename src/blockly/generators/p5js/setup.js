@@ -10,10 +10,9 @@ Blockly.p5js['setup'] = function(block) {
 };
 
 Blockly.p5js['draw'] = function(block) {
-  var statements_name = Blockly.p5js.statementToCode(block, 'NAME');
+  var branch = Blockly.p5js.statementToCode(block, 'NAME');
   // TODO: Assemble p5js into code variable.
-  var code = 'function draw(){\n';
-  code += statements_name;
-  code += "}\n";
+  var code = 'function draw(){\n' +
+  branch +"}\n";
   return code;
 };

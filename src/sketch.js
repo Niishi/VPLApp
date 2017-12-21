@@ -3,11 +3,9 @@ function setup(){
     canvas.parent('sketch');
 }
 
-var x = 0;
 function draw(){
-    background(255,0,255);
-    noStroke();
-    rect(x, 250, 200,200);
-    x += 1;
-    if(x > 500)x = -200;
+    background("#cccccc");
+    for(var count = 0; count < 10; count++){
+        rect(100,100,300,200);
+    }
 }
