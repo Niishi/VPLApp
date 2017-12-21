@@ -31,9 +31,6 @@ function changeEvent(e) {
         var editor = getAceEditor();
         var editSession = editor.getSession();
         var search = new Search();
-        text = "  for (var count = 0; count < 10; count++) {\n" +
-            "    rect(100, 100, 300, 200);\n" +
-            "  }";
         searchOption.needle = text;
         search.set(searchOption);
         var range = search.find(editSession);
@@ -67,12 +64,19 @@ var Pjs;
 function run() {
 
     // runCode();
-    // saveCode();
+    saveCode();
     // // // location.reload();
     // loadScript("./src/sketch.js", function() {
     //     console.log('script loaded');
     // });
-    // var codeText = getAceEditor().getValue();
+    var codeText = getAceEditor().getValue();
+    try{
+        var s = new Function("p", codeText);
+        Pjs = new p5(s,"sketch");
+    }catch(e){
+        // alert(e);
+
+    }
     // eval(codeText);
 
 }

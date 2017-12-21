@@ -1,11 +1,7 @@
-function setup(){
-    var canvas = createCanvas(500,500);
-    canvas.parent('sketch');
-}
+500;
 
-function draw(){
-    background("#cccccc");
-    for(var count = 0; count < 10; count++){
-        rect(100,100,300,200);
-    }
-}
+500;
+
+  background("#cccccc");
+
+rect(0, 0, 200, 200);
