@@ -3,7 +3,7 @@ Blockly.p5js['setup'] = function(block) {
   // TODO: Assemble p5js into code variable.
   var code = 'setup = function(){\n';
   code += "    var canvas = createCanvas(500,500);\n";
-  code += "    canvas.parent('sketch');\n"
+  code += "    canvas.parent('sketch');\n";
   code += statements_setup_methods;
   code += "};\n";
   return code;

@@ -1,7 +1,10 @@
-500;
+setup = function(){
+    var canvas = createCanvas(500,500);
+    canvas.parent('sketch');
+};
 
-500;
-
-  background("#cccccc");
-
-rect(0, 0, 200, 200);
+draw = function(){
+  background('#ffff66');
+  noStroke();
+  rect((10 + 1), 111, 111, 111);
+};

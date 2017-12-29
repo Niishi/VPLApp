@@ -16,11 +16,11 @@ function func1(e) {
         },KEY_TIME);
     }
 }
-var argCount = -1;
 function codeToBlock() {
     parentBlock = null;
     workspace.clear();
     // console.log("start");
+    var editor = getAceEditor();
     var program = editor.getValue();
     var ast = esprima.parse(program);
     var get_node_info = function(node){
@@ -40,50 +40,134 @@ function codeToBlock() {
     };
     estraverse.traverse(ast, {
         enter: function (node, parent) {
+            console.log('[enter] ', node.type, ':', get_node_info(node));
             blockByCode(node);
-            console.log('[enter] ', node.type, ':', get_node_info(node))
         },
         leave: function (node, parent) {
 
-            if(parentBlock !== null && usedNode == node){
+            switch (node.type) {
+                case 'AssignmentExpression':
+                    if(node.left.name == "setup"){
+                        isSetupFunction = false;
+                    }else if(node.left.name == "draw"){
+                        isDrawFunction = false;
+                    }
+                    break;
+            }
 
-                if(parentBlock.outputConnection !== null){
+            if(nodeStack[nodeStack.length-1] === node.type && !isDrawFunction && isExist(parentBlock)){
+                if (isExist(parentBlock.outputConnection)){
                     parentBlock = parentBlock.outputConnection.targetBlock();
-                }else if(parentBlock.previousConnection !== null){
+                } else if (isExist(parentBlock.previousConnection)){
                     parentBlock = parentBlock.previousConnection.targetBlock();
-                }else{
+                } else {
                     parentBlock = null;
                 }
+                nodeStack.pop();
+                console.log("parent!!!!!!!!!!!!!!!!!!!!");
             }
-            console.log('[leave] ', node.type, ':', get_node_info(node))
+            console.log('[leave] ', node.type, ':', get_node_info(node));
         }
     });
+    blockY = 0;
 }
-var callFunctionNameList = ["fill","background","rect"];
+function isExist(a) {
+    return a !== undefined && a !== null;
+}
+
+var callFunctionNameList = ["fill","background","rect", "noStroke"];
 var functionNameList = ["setup", "draw"];
 var parentBlock = null;
 
 var usedNode = null;
-function blockByCode(node) {
+var isSetupFunction = false;
+var isDrawFunction = false;
 
+var nodeStack = [];
+
+var blockY = 0;
+var blockX = 100;
+function blockByCode(node) {
+    if(isSetupFunction){
+        return;
+    }
     switch (node.type) {
         case 'Identifier':
-        return node.name;
+            switch(node.name){
+                case 'mouseX':
+                case 'mouseY':
+                    var block = createBlock(node.name, node.type);
+                    if(parentBlock!== null){
+                        var index = getAkiIndex(parentBlock.inputList);
+                        block.outputConnection.connect(parentBlock.inputList[index].connection);
+                    }
+                    parentBlock = block;
+                    break;
+            }
+            break;
+        case 'AssignmentExpression':
+
+            if(node.left.name == "setup"){
+                isSetupFunction = true;
+                var block = new Blockly.BlockSvg(workspace, "setup");
+                block.moveBy(blockX, blockY);
+                block.initSvg();
+                block.render();
+                parentBlock = block;
+                blockY += parentBlock.height;
+                nodeStack.push("AssignmentExpression");
+                break;
+            }else if(node.left.name == "draw"){
+                isDrawFunction = true;
+                var block = new Blockly.BlockSvg(workspace, "draw");
+                block.moveBy(blockX, blockY);
+                block.initSvg();
+                block.render();
+                parentBlock = block;
+                nodeStack.push("AssignmentExpression");
+                break;
+            }
+            break;
         case 'ExpressionStatement':
             var expression = node.expression;
-            argCount = -1;
+
             if(expression.type === 'CallExpression'){
-                searchBlock(expression.callee.name, callFunctionNameList);
+                searchBlock(expression.callee.name, callFunctionNameList, node.type);
                 usedNode = node;
                 break;
             }
             break;
-        case 'FunctionDeclaration':
-            searchBlock(node.id.name, functionNameList);
-            usedNode = node;
+        case 'FunctionExpression':
+            if(isDrawFunction){
+                isDrawFunction = false;
+            }
             break;
+        case 'FunctionDeclaration':
+            if(isDrawFunction){
+                isDrawFunction = false;
+                break
+            }else{
+                searchBlock(node.id.name, functionNameList, node.type);
+                usedNode = node;
+                break;
+            }
         case 'Literal':
-            if(!isNaN(node.value)){
+            if(isColor(node.value)){
+                var block = new Blockly.BlockSvg(workspace, "colour_picker");
+                block.initSvg();
+                block.render();
+
+                console.log(parentBlock);
+                block.inputList[0].fieldRow[0].setValue(node.value);
+
+                if(parentBlock!== null){
+                    var index = getAkiIndex(parentBlock.inputList);
+                    block.outputConnection.connect(parentBlock.inputList[index].connection);
+                }
+                nodeStack.push("Literal");
+                parentBlock = block;
+            }
+            else if(!isNaN(node.value)){
                 var block = new Blockly.BlockSvg(workspace, "math_number");
                 block.initSvg();
                 block.render();
@@ -92,10 +176,38 @@ function blockByCode(node) {
                 // usedNode = node;
                 if(parentBlock!== null){
                     var index = getAkiIndex(parentBlock.inputList);
-                    console.log(index);
                     block.outputConnection.connect(parentBlock.inputList[index].connection);
                 }
+                nodeStack.push("Literal");
+                parentBlock = block;
             }
+            break;
+        case 'BinaryExpression':
+            var block = new Blockly.BlockSvg(workspace, "math_arithmetic");
+            switch(node.operator) {
+                case "+":
+                    block.getField("OP").setValue("ADD");
+                    break;
+                case "-":
+                    block.getField("OP").setValue("MINUS");
+                    break;
+                case "*":
+                    block.getField("OP").setValue("MULTIPLY");
+                    break;
+                case "/":
+                    block.getField("OP").setValue("DIVIDE");
+                    break;
+            }
+            block.initSvg();
+            block.render();
+            if(parentBlock!== null){
+                var index = getAkiIndex(parentBlock.inputList);
+                block.outputConnection.connect(parentBlock.inputList[index].connection);
+            }
+            parentBlock = block;
+            nodeStack.push("BinaryExpression");
+
+
             break;
         default:
         return node.type;
@@ -105,23 +217,38 @@ function blockByCode(node) {
 function getAkiIndex(inputList) {
     var i = 0;
     for(input of inputList){
-        if(!input.connection.isConnected()){
+
+        if(input.connection !== null && !input.connection.isConnected()){
             return i;
         }
         i++;
     }
+    console.error("インデックスの空きが見つかりませんでした");
     return -1;
 }
-function searchBlock(name, list) {
+function searchBlock(name, list, type) {
     for(name1 of list){
         if(name1 === name){
             console.log(name);
-            createBlockByName(name);
+            createBlockByName(name, type);
         }
     }
 }
 
-function createBlockByName(name){
+function isColor (color) {
+    if(!isNaN(color)) return false;
+    return color.match(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/) !== null;
+}
+
+function createBlock(name, type){
+    var block = new Blockly.BlockSvg(workspace, name);
+    block.initSvg();
+    block.render();
+    nodeStack.push(type);
+    return block;
+}
+function createBlockByName(name, type){
+    console.log(parentBlock);
     var block = new Blockly.BlockSvg(workspace, name);
     block.initSvg();
     block.render();
@@ -137,6 +264,7 @@ function createBlockByName(name){
             block.previousConnection.connect(childBlocks[childBlocks.length-1].nextConnection);
         }
     }
+    nodeStack.push(type);
     parentBlock = block;
 }
 

@@ -27,7 +27,9 @@
   <script src="blockly/blocks/lists.js"></script>
   <script src="blockly/blocks/variables.js"></script>
   <script src="blockly/blocks/procedures.js"></script>
+  <script src="blockly/blocks/colour.js"></script>
 
+  <script src="blockly/blocks/input_mouse.js"></script>
 
   <script src="blockly/blocks/setup.js"></script>
   <script src="blockly/blocks/size.js"></script>
@@ -48,6 +50,7 @@
   <script src="blockly/generators/p5js/lists.js"></script>
   <script src="blockly/generators/p5js/variables.js"></script>
   <script src="blockly/generators/p5js/procedures.js"></script>
+  <script src="blockly/generators/p5js/colour.js"></script>
 
 
   <script src="blockly/generators/p5js/setup.js"></script>
@@ -62,6 +65,8 @@
   <script src="blockly/generators/p5js/clear.js"></script>
   <script src="blockly/generators/p5js/createCanvas.js"></script>
   <script src="blockly/generators/p5js/createCanvas1.js"></script>
+
+  <script src="blockly/generators/p5js/input_mouse.js"></script>
 
   <!--翻訳-->
   <script src="blockly/msg/js/ja.js"></script>
@@ -113,6 +118,15 @@
                 <block type="stroke"></block>
                 <block type="noFill"></block>
                 <block type="noStroke"></block>
+                <block type="colour_picker"></block>
+
+            </category>
+        </category>
+        <category name="Input">
+            <category name="Mouse">
+                <block type="mouseX"></block>
+                <block type="mouseY"></block>
+
             </category>
         </category>
         <category name="IF">

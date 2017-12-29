@@ -69,6 +69,7 @@ function run() {
     // loadScript("./src/sketch.js", function() {
     //     console.log('script loaded');
     // });
+    // $("#defaultCanvas0").remove();
     var codeText = getAceEditor().getValue();
     try{
         var s = new Function("p", codeText);
@@ -222,7 +223,7 @@ function getSelectedBlock() {
 }
 
 function saveCode() {
-    var codeText = editor.getValue();
+    var codeText = getAceEditor().getValue();
     saveFile("./src/sketch.js", codeText);
 }
 
@@ -258,6 +259,7 @@ function readFile(path) {
         var text = buffer.toString('utf-8',0,buffer.length);    //Bufferのままではaceのエディタに設定できないので文字列に変換している
         editor.setValue(text,-1);
         editor.blur();
+        codeToBlock();
     });
 }
 function getAceEditor() {
