@@ -18,8 +18,6 @@ function func1(e) {
 }
 function codeToBlock() {
     parentBlock = null;
-
-    // console.log("start");
     var editor = getAceEditor();
     var program = editor.getValue();
     try {
@@ -46,7 +44,7 @@ function codeToBlock() {
     };
     estraverse.traverse(ast, {
         enter: function (node, parent) {
-            console.log('[enter] ', node.type, ':', get_node_info(node));
+            // console.log('[enter] ', node.type, ':', get_node_info(node));
             blockByCode(node);
         },
         leave: function (node, parent) {
@@ -79,7 +77,7 @@ function codeToBlock() {
                 }
                 nodeStack.pop();
             }
-            console.log('[leave] ', node.type, ':', get_node_info(node));
+            // console.log('[leave] ', node.type, ':', get_node_info(node));
         }
     });
     blockY = 0;
@@ -103,6 +101,8 @@ var blockMargin = 30;
 var isAssignment = false;
 var isVarDecl = false;
 var isCallExp = false;
+
+var argLength = 0;
 function blockByCode(node) {
     if(isSetupFunction){
         return;
@@ -117,7 +117,16 @@ function blockByCode(node) {
                 workspace.createVariable(node.name);
             }else if(isCallExp && !(isSetupFunction || isDrawFunction)){
                 if(!searchBlock(node.name, callFunctionNameList, 'CallExpression')){
-
+                    var block = createBlock('procedures_callnoreturn','CallExpression');
+                    block.renameProcedure(block.getProcedureCall(), node.name);
+                    var argNameList = [];
+                    var argIdList = [];
+                    idString = getRandomString();
+                    for (var i = 0; i < argLength; i++) {
+                        argNameList.push(""+i);
+                        argIdList.push(idString + i);
+                    }
+                    block.setProcedureParameters_(argNameList, argIdList);
                 }
                 isCallExp = false;
             }
@@ -168,14 +177,18 @@ function blockByCode(node) {
                 parentBlock = block;
                 blockY += parentBlock.height + blockMargin;
                 nodeStack.push("AssignmentExpression");
-            }else{
+            } else {
                 createBlockByName("variables_set", node.type);
             }
             break;
         case 'ExpressionStatement':
             var expression = node.expression;
+            if(expression.type === 'CallExpression'){
+                argLength = expression.arguments.length;
+            }
             break;
         case 'CallExpression':
+            callExpressionBlock(node);
             isCallExp = true;
             break;
         case 'VariableDeclaration':
@@ -199,6 +212,15 @@ function blockByCode(node) {
                 searchBlock(node.id.name, functionNameList, node.type);
                 break;
             }
+        case 'IfStatement':
+            if(node.alternate === null){
+                //ただのif文(elseなし)
+                createBlockByName('controls_if', node.type);
+            }else{
+                //if else文
+                createBlockByName('controls_ifelse', node.type);
+            }
+            break;
         case 'Literal':
             if(isColor(node.value)){
                 var block = new Blockly.BlockSvg(workspace, "colour_picker");
@@ -229,37 +251,82 @@ function blockByCode(node) {
             }
             break;
         case 'BinaryExpression':
-            var block = new Blockly.BlockSvg(workspace, "math_arithmetic");
+            var block = null;
             switch(node.operator) {
                 case "+":
+                    block = createBlock("math_arithmetic", node.type);
                     block.getField("OP").setValue("ADD");
                     break;
                 case "-":
+                    block = createBlock("math_arithmetic", node.type);
                     block.getField("OP").setValue("MINUS");
                     break;
                 case "*":
+                    block = createBlock("math_arithmetic", node.type);
                     block.getField("OP").setValue("MULTIPLY");
                     break;
                 case "/":
+                    block = createBlock("math_arithmetic", node.type);
                     block.getField("OP").setValue("DIVIDE");
                     break;
+                case '==':
+                    block = createBlock("logic_compare", node.type);
+                    block.getField("OP").setValue("EQ");
+                    break;
+                case '!=':
+                    block = createBlock("logic_compare", node.type);
+                    block.getField("OP").setValue("NEQ");
+                    break;
+                case '<=':
+                    block = createBlock("logic_compare", node.type);
+                    block.getField("OP").setValue("LTE");
+                    break;
+                case '<':
+                    block = createBlock("logic_compare", node.type);
+                    block.getField("OP").setValue("LT");
+                    break;
+                case '>=':
+                    block = createBlock("logic_compare", node.type);
+                    block.getField("OP").setValue("RTE");
+                    break;
+                case '>':
+                    block = createBlock("logic_compare", node.type);
+                    block.getField("OP").setValue("RT");
+                    break;
             }
-            block.initSvg();
-            block.render();
-            if(parentBlock!== null){
-                var index = getAkiIndex(parentBlock.inputList);
-                block.outputConnection.connect(parentBlock.inputList[index].connection);
-            }
-            parentBlock = block;
-            nodeStack.push("BinaryExpression");
-
-
+            // block.initSvg();
+            // block.render();
+            // if(parentBlock!== null){
+            //     var index = getAkiIndex(parentBlock.inputList);
+            //     block.outputConnection.connect(parentBlock.inputList[index].connection);
+            // }
+            // parentBlock = block;
+            // nodeStack.push("BinaryExpression");
             break;
         default:
         return node.type;
     }
-
 }
+
+function callExpressionBlock(node){
+    var name = node.callee.name;
+    if(!searchBlock(node.name, callFunctionNameList, 'CallExpression')){
+        var block = createBlock('procedures_callnoreturn','CallExpression');
+        block.renameProcedure(block.getProcedureCall(), node.name);
+        var argNameList = [];
+        var argIdList = [];
+        idString = getRandomString();
+        for (var i = 0; i < argLength; i++) {
+            argNameList.push(""+i);
+            argIdList.push(idString + i);
+        }
+        block.setProcedureParameters_(argNameList, argIdList);
+    }
+    for (argument of node.arguments) {
+
+    }
+}
+
 function getAkiIndex(inputList) {
     var i = 0;
     for(input of inputList){
@@ -296,6 +363,18 @@ function createBlock(name, type){
         block.moveBy(blockX, blockY);
         blockY += block.height + blockMargin;
     }
+    if(parentBlock !== null && block.previousConnection !== null){
+        var childBlocks = parentBlock.getChildren();
+        if(childBlocks.length == 0){
+            if(parentBlock.inputList[0].connection != null){
+                block.previousConnection.connect(parentBlock.inputList[0].connection);
+            }else if(parentBlock.nextConnection !== null){
+                block.previousConnection.connect(parentBlock.nextConnection);
+            }
+        }else{
+            block.previousConnection.connect(childBlocks[childBlocks.length-1].nextConnection);
+        }
+    }
     nodeStack.push(type);
     parentBlock = block;
     return block;
@@ -322,6 +401,21 @@ function createBlockByName(name, type){
     }
     nodeStack.push(type);
     parentBlock = block;
+}
+
+function getRandomString(){
+    // 生成する文字列の長さ
+    var l = 8;
+
+    // 生成する文字列に含める文字セット
+    var c = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+    var cl = c.length;
+    var r = "";
+    for(var i=0; i<l; i++){
+      r += c[Math.floor(Math.random()*cl)];
+    }
+    return r;
 }
 
 //Aceエディタの設定

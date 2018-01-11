@@ -12,4 +12,7 @@ draw = function(){
   background(150);
   rect(x, 100, 100, 100);
   x = x + 0.1;
+  if (y < 0) {
+    y = height;
+  } 
 };
