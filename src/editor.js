@@ -1,6 +1,6 @@
 const esprima = require('esprima');
 const estraverse = require('estraverse');
-
+const prompt = require('electron-prompt');
 
 var keyStack = [];  //入力数を保存する変数
 const KEY_TIME = 1000;   //1000msだけキー入力を待つ
@@ -18,11 +18,17 @@ function func1(e) {
 }
 function codeToBlock() {
     parentBlock = null;
-    workspace.clear();
+
     // console.log("start");
     var editor = getAceEditor();
     var program = editor.getValue();
-    var ast = esprima.parse(program);
+    try {
+        var ast = esprima.parse(program);
+        workspace.clear();
+    } catch (e) {
+        console.error("構文エラー");
+        return;
+    }
     var get_node_info = function(node){
 
         switch (node.type) {
@@ -47,11 +53,19 @@ function codeToBlock() {
 
             switch (node.type) {
                 case 'AssignmentExpression':
+                    isAssignment = false;
                     if(node.left.name == "setup"){
                         isSetupFunction = false;
                     }else if(node.left.name == "draw"){
                         isDrawFunction = false;
+                        isAssignment = false;
                     }
+                    break;
+                case 'VariableDeclaration':
+                    isVarDecl = false;
+                    break;
+                case 'CallExpression':
+                    isCallExp = false;
                     break;
             }
 
@@ -64,7 +78,6 @@ function codeToBlock() {
                     parentBlock = null;
                 }
                 nodeStack.pop();
-                console.log("parent!!!!!!!!!!!!!!!!!!!!");
             }
             console.log('[leave] ', node.type, ':', get_node_info(node));
         }
@@ -79,34 +92,64 @@ var callFunctionNameList = ["fill","background","rect", "noStroke"];
 var functionNameList = ["setup", "draw"];
 var parentBlock = null;
 
-var usedNode = null;
 var isSetupFunction = false;
 var isDrawFunction = false;
 
 var nodeStack = [];
-
 var blockY = 0;
 var blockX = 100;
+var blockMargin = 30;
+
+var isAssignment = false;
+var isVarDecl = false;
+var isCallExp = false;
 function blockByCode(node) {
     if(isSetupFunction){
         return;
     }
     switch (node.type) {
         case 'Identifier':
-            switch(node.name){
-                case 'mouseX':
-                case 'mouseY':
-                    var block = createBlock(node.name, node.type);
-                    if(parentBlock!== null){
-                        var index = getAkiIndex(parentBlock.inputList);
-                        block.outputConnection.connect(parentBlock.inputList[index].connection);
-                    }
-                    parentBlock = block;
-                    break;
+            if(isAssignment && !(isSetupFunction || isDrawFunction)){
+                var variable = workspace.getVariable(node.name);
+                parentBlock.getField("VAR").setValue(variable.getId());
+                isAssignment = false;
+            }else if(isVarDecl && !(isSetupFunction || isDrawFunction)){
+                workspace.createVariable(node.name);
+            }else if(isCallExp && !(isSetupFunction || isDrawFunction)){
+                if(!searchBlock(node.name, callFunctionNameList, 'CallExpression')){
+
+                }
+                isCallExp = false;
+            }
+            else{
+                switch(node.name){
+                    case 'mouseX':
+                    case 'mouseY':
+                        var block = createBlock(node.name, node.type);
+                        if(parentBlock!== null){
+                            var index = getAkiIndex(parentBlock.inputList);
+                            block.outputConnection.connect(parentBlock.inputList[index].connection);
+                        }
+                        break;
+                    default:
+                        if(!(isSetupFunction || isDrawFunction)){
+                            var block = new Blockly.BlockSvg(workspace, "variables_get");
+                            block.initSvg();
+                            block.render();
+
+                            block.getField("VAR").setValue(node.name);
+                            if(parentBlock!== null){
+                                var index = getAkiIndex(parentBlock.inputList);
+                                block.outputConnection.connect(parentBlock.inputList[index].connection);
+                            }
+                            nodeStack.push("Identifier");
+                            parentBlock = block;
+                        }
+                }
             }
             break;
         case 'AssignmentExpression':
-
+            isAssignment = true;
             if(node.left.name == "setup"){
                 isSetupFunction = true;
                 var block = new Blockly.BlockSvg(workspace, "setup");
@@ -114,9 +157,8 @@ function blockByCode(node) {
                 block.initSvg();
                 block.render();
                 parentBlock = block;
-                blockY += parentBlock.height;
+                blockY += parentBlock.height + blockMargin;
                 nodeStack.push("AssignmentExpression");
-                break;
             }else if(node.left.name == "draw"){
                 isDrawFunction = true;
                 var block = new Blockly.BlockSvg(workspace, "draw");
@@ -124,31 +166,37 @@ function blockByCode(node) {
                 block.initSvg();
                 block.render();
                 parentBlock = block;
+                blockY += parentBlock.height + blockMargin;
                 nodeStack.push("AssignmentExpression");
-                break;
+            }else{
+                createBlockByName("variables_set", node.type);
             }
             break;
         case 'ExpressionStatement':
             var expression = node.expression;
-
-            if(expression.type === 'CallExpression'){
-                searchBlock(expression.callee.name, callFunctionNameList, node.type);
-                usedNode = node;
-                break;
-            }
+            break;
+        case 'CallExpression':
+            isCallExp = true;
+            break;
+        case 'VariableDeclaration':
+            isVarDecl = true;
+            break;
+        case 'VariableDeclarator':
+            name = "";
             break;
         case 'FunctionExpression':
             if(isDrawFunction){
                 isDrawFunction = false;
+                isAssignment = false;
             }
             break;
         case 'FunctionDeclaration':
             if(isDrawFunction){
                 isDrawFunction = false;
-                break
+                isAssignment = false;
+                break;
             }else{
                 searchBlock(node.id.name, functionNameList, node.type);
-                usedNode = node;
                 break;
             }
         case 'Literal':
@@ -157,7 +205,6 @@ function blockByCode(node) {
                 block.initSvg();
                 block.render();
 
-                console.log(parentBlock);
                 block.inputList[0].fieldRow[0].setValue(node.value);
 
                 if(parentBlock!== null){
@@ -173,7 +220,6 @@ function blockByCode(node) {
                 block.render();
 
                 block.inputList[0].fieldRow[0].setValue(node.value);
-                // usedNode = node;
                 if(parentBlock!== null){
                     var index = getAkiIndex(parentBlock.inputList);
                     block.outputConnection.connect(parentBlock.inputList[index].connection);
@@ -231,8 +277,10 @@ function searchBlock(name, list, type) {
         if(name1 === name){
             console.log(name);
             createBlockByName(name, type);
+            return true;
         }
     }
+    return false;
 }
 
 function isColor (color) {
@@ -244,14 +292,22 @@ function createBlock(name, type){
     var block = new Blockly.BlockSvg(workspace, name);
     block.initSvg();
     block.render();
+    if(parentBlock === null){
+        block.moveBy(blockX, blockY);
+        blockY += block.height + blockMargin;
+    }
     nodeStack.push(type);
+    parentBlock = block;
     return block;
 }
 function createBlockByName(name, type){
-    console.log(parentBlock);
     var block = new Blockly.BlockSvg(workspace, name);
     block.initSvg();
     block.render();
+    if(parentBlock === null){
+        block.moveBy(blockX, blockY);
+        blockY += block.height + blockMargin;
+    }
     if(parentBlock !== null && block.previousConnection !== null){
         var childBlocks = parentBlock.getChildren();
         if(childBlocks.length == 0){
@@ -278,3 +334,35 @@ function onLoad() {
     editor.$blockScrolling = Infinity;
     editor.on('change', func1);
 }
+
+
+//ダイアログ
+const dlg = document.querySelector('#sample-dialog');
+//Escによるキャンセルをさせない
+dlg.addEventListener('cancel', (event) => {
+    'use strict';
+    event.preventDefault();
+});
+function showModalDialogElement() {
+    'use strict';
+
+    return new Promise((resolve, reject) => {
+        dlg.showModal();
+
+        function onClose(event) {
+            // 2017/2/5現在Chromium:v54のためaddEventListenerの{once: true}は利用できないため自力で解放。v55になれば{once: true}を利用するのが良いと思います。
+            dlg.removeEventListener('close', onClose);
+            if (dlg.returnValue === 'ok') { //returnValueにvalue属性の値が入る
+                const inputValue = document.querySelector('#input').value;//入力値を取得
+                // alert(inputValue);//テストのためalert
+                resolve(inputValue);//入力値をresolve
+            } else {
+                reject();
+            }
+        }
+        dlg.addEventListener('close', onClose, {once: true});
+    });
+}
+Blockly.prompt = function (a,b,c){
+    return showModalDialogElement().then((text) =>{return c(text);});
+};

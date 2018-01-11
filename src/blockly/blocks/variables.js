@@ -20,7 +20,6 @@
 
 /**
  * @fileoverview Variable blocks for Blockly.
-
  * This file is scraped to extract a .json file of block definitions. The array
  * passed to defineBlocksWithJsonArray(..) must be strict JSON: double quotes
  * only, no outside references, no functions, no trailing commas, etc. The one
@@ -33,6 +32,7 @@ goog.provide('Blockly.Blocks.variables');  // Deprecated.
 goog.provide('Blockly.Constants.Variables');
 
 goog.require('Blockly.Blocks');
+goog.require('Blockly');
 
 
 /**

@@ -207,6 +207,7 @@ document.getElementById("blockTextBox").onkeypress = function(e){
         if(closestConnection !== null && closestConnection.targetConnection === null){
             block.outputConnection.connect(closestConnection);
         }
+
         textBox.style.visibility = "hidden";
     }
     if(e.keyCode === 108){
@@ -271,7 +272,7 @@ function runCode() {
     $("#sketch").remove();
     $("#sketch-container").append('<div id="sketch" width="500" height="500"></div>');
 
-    $("#sketch").append('<canvas id="defaultCanvas0" style="width: 500px; height: 500px;" width="500" height="500"></canvas>');
+    // $("#sketch").append('<canvas id="defaultCanvas0" style="width: 500px; height: 500px;" width="500" height="500"></canvas>');
     // $("#sketchjs").remove();
     // $("#sketchjs-container").append('<script id="sketchjs" src="sketch.js"></script>');
     // draw();
