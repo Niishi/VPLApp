@@ -74,26 +74,18 @@ function addMarkerToBlock(block){
 workspace.addChangeListener(changeEvent);
 
 var Pjs;
-
+var flag = false;
 function run() {
-
-    // runCode();
     saveCode();
-    // // // location.reload();
-    // loadScript("./src/sketch.js", function() {
-    //     console.log('script loaded');
-    // });
-    // $("#defaultCanvas0").remove();
+    // runCode();
     var codeText = getAceEditor().getValue();
-    try{
-        var s = new Function("p", codeText);
-        Pjs = new p5(s,"sketch");
-    }catch(e){
-        // alert(e);
-
-    }
-    // eval(codeText);
-
+    // try{
+    //     var s = new Function("p", codeText);
+    //     Pjs = new p5(s,"sketch");
+    // }catch(e){
+    //     // alert(e);
+    // }
+    eval(codeText);
 }
 
 document.getElementById("blocklyDiv").ondblclick = function (event) {

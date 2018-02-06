@@ -70,6 +70,8 @@ function blockByStatement(statement) {
             return blockStatementBlock(statement);
         case 'ExpressionStatement':
             return blockByExpression(statement.expression, true);
+        case 'ForStatement':
+            return forStatementBlock(statement);
         case 'IfStatement':
             return ifStatementBlock(statement);
         case 'WhileStatement':
@@ -102,6 +104,26 @@ function blockStatementBlock(statement) {
     }
     return firstBlock;
 }
+
+function forStatementBlock(statement) {
+    var block = createBlock('controls_for');
+
+    var initBlock = blockByStatement(statement.init);
+    var testBlock = blockByExpression(statement.test);
+    var updateBlock = blockByExpression(statement.update);
+    var stmBlock = blockByStatement(statement.body);
+    combineStatementBlock(block, initBlock, 0);
+    combineStatementBlock(block, testBlock, 1);
+    combineStatementBlock(block, updateBlock, 3);
+    combineStatementBlock(block, stmBlock, 2);
+
+    return block;
+}
+/**
+ * if文のブロックを作成する
+ * @param  {JSON} statement [description]
+ * @return {[type]} if文ブロック
+ */
 function ifStatementBlock(statement){
     var block;
     if(statement.alternate === null){
@@ -184,6 +206,8 @@ function blockByExpression(expression, isStatement) {
             return literalBlock(expression);
         case 'UnaryExpression':
             return unaryExpressionBlock(expression);
+        case 'UpdateExpression':
+            return updateExpressionBlock(expression);
         default:
             errorMessage("blockByExpressionでエラー。該当しないExpression=>" + expression.type);
             return null;
@@ -358,6 +382,19 @@ function unaryExpressionBlock(node) {
     }
 }
 
+function updateExpressionBlock(node) {
+    var block = createBlock("updateexpression");
+    var arg = node.argument;
+    createVariable(arg.name);
+    var variable = workspace.getVariable(arg.name);
+    block.getField("VAR").setValue(variable.getId());
+    if(node.operator === '++'){
+        block.getField('OPE').setValue('INC');
+    }else{
+        block.getField('OPE').setValue('DEC');
+    }
+    return block;
+}
 /**
  * msgの内容をエラーとして出力する
  * @param  {String} msg エラーメッセージ
