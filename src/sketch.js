@@ -10,17 +10,6 @@ setup = function(){
     canvas.parent('sketch');
 };
 
-i++;
-
-i < 10;
-
-background(0);
-
-i = 0;
-
-for (i = 0; i <= 0; i++) {
-}
-
 draw = function(){
   frameRate(60);
   background(0);

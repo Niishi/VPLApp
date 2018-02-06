@@ -472,6 +472,8 @@ function createVariable(name) {
     }
 }
 
+
+
 function isColor (color) {
     if(!isNaN(color)) return false;
     return color.match(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/) !== null;
