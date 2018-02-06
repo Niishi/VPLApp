@@ -24,37 +24,51 @@ function changeEvent(e) {
     //ブロック生成時のイベントを設定
     if(e.type === Blockly.Events.CREATE){
         var selectBlock = workspace.getBlockById(e.blockId);
-    }
-    if(e.type === Blockly.Events.MOVE){
+        addMarkerToBlock(selectBlock);
+        run();
+    }else if(e.type === Blockly.Events.MOVE){
         var block = workspace.getBlockById(e.blockId);
-        var text = Blockly.p5js.blockToCode(block);
-        var editor = getAceEditor();
-        var editSession = editor.getSession();
-        var search = new Search();
-        searchOption.needle = text;
-        search.set(searchOption);
-        var range = search.find(editSession);
-        if(rangeId){
-            editSession.removeMarker(rangeId);
-        }
-        if(range){
-            rangeId = editSession.addMarker(range, "highlight_line", "text");
-            // range = editSession.highlightLines(range.start.row, range.end.row-1, "highlight_line");
-            // rangeId = range.id;
-        }else{
-            console.log("Not Found : " + text);
-        }
+        addMarkerToBlock(block);
+        run();
+    }else if(e.type === Blockly.Events.CHANGE){
+        var block = workspace.getBlockById(e.blockId);
+        addMarkerToBlock(block);
+        run();
+    }else{
+        var block = workspace.getBlockById(e.blockId);
+        addMarkerToBlock(block);
     }
-    run();
-    // topBlocks = workspace.getTopBlocks();
-    // for (block of topBlocks) {
-    // }
-    // for (var block in topBlocks) {
-    //     if (topBlocks.hasOwnProperty(block)) {
-    //         topBlocks[block].moveBy(1000,1000);
-    //     }
-    // }
 
+}
+/**
+ * 指定したブロックに対応するテキストをハイライト表示させる
+ * @param {[type]} block [description]
+ */
+function addMarkerToBlock(block){
+    var text = Blockly.p5js.blockToCode(block);
+    if(typeof(text) === "object"){
+        text = text[0];
+    }else if(typeof(text) === "string"){
+        text = text.split("\n")[0];
+
+    }
+
+    var editor = getAceEditor();
+    var editSession = editor.getSession();
+    var search = new Search();
+    searchOption.needle = text;
+    search.set(searchOption);
+    var range = search.find(editSession);
+    if(rangeId){
+        editSession.removeMarker(rangeId);
+    }
+    if(range){
+        rangeId = editSession.addMarker(range, "highlight_line", "text");
+        // range = editSession.highlightLines(range.start.row, range.end.row-1, "highlight_line");
+        // rangeId = range.id;
+    }else{
+        console.log("Not Found : " + text);
+    }
 }
 // workspaceのリスナーへ登録を忘れずに
 workspace.addChangeListener(changeEvent);
@@ -158,28 +172,6 @@ document.onkeydown  = function (e) {
 
 var blockList = ["setup","size", "draw", "fill","background","ellipse","rect","stroke", "noFill","noStroke"];
 
-
-document.getElementById("blockTextBox").oninput = function(event) {
-    var textBox = document.getElementById("blockTextBox");
-    var clientRect = textBox.getBoundingClientRect();
-    for(blockName of blockList){
-        if(textBox.value == blockName + "()"){
-            var block = new Blockly.BlockSvg(workspace, blockName);
-            block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
-            block.initSvg();
-            block.render();
-            const parentBlock = getSelectedBlock();
-            if(parentBlock !== null && block.previousConnection !== null){
-                if(parentBlock.inputList[0].connection != null){
-                    block.previousConnection.connect(parentBlock.inputList[0].connection);
-                }else if(parentBlock.nextConnection !== null){
-                    block.previousConnection.connect(parentBlock.nextConnection);
-                }
-            }
-            textBox.style.visibility = "hidden";
-        }
-    }
-}
 var Search = require('ace/search').Search;
 var Range = require('ace/range').Range;
 var searchOption = {
@@ -196,16 +188,31 @@ document.getElementById("blockTextBox").onkeypress = function(e){
     var textBox = document.getElementById("blockTextBox");
     var clientRect = textBox.getBoundingClientRect();
     if ( e.keyCode === 13 ) {   //エンターキーが押されたとき
-        var block = calc(textBox.value);
-        block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
-        block.initSvg();
-        block.render();
+        var block = blockByCode(textBox.value);
+        if(block === "error"){
+            alert("SyntaxError : " + textBox.value);
+            return;
+        }
+        // block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
+        block.moveBy(clientRect.left- 85, clientRect.top-25);  //TODO　マジックナンバー使用！要変更
 
-        var xy = block.getRelativeToSurfaceXY();
-        var connectionDB = block.outputConnection.dbOpposite_;
-        var closestConnection = connectionDB.searchForClosest(block.outputConnection, 3000, new goog.math.Coordinate(0,0)).connection;
-        if(closestConnection !== null && closestConnection.targetConnection === null){
-            block.outputConnection.connect(closestConnection);
+        if(block.outputConnection !== null){
+            var connectionDB = block.outputConnection.dbOpposite_;
+            var closestConnection = connectionDB.searchForClosest(block.outputConnection, 2000, new goog.math.Coordinate(-block.width,0)).connection;
+            if(closestConnection !== null && closestConnection.targetConnection === null){
+                block.outputConnection.connect(closestConnection);
+            }
+        }else{
+            const parentBlock = getSelectedBlock();
+            if(parentBlock !== null && block.previousConnection !== null){
+                // if(parentBlock.inputList[0].connection != null){
+
+                if(parentBlock.inputList[0].connection != null && !parentBlock.inputList[0].connection.isConnected()){
+                    block.previousConnection.connect(parentBlock.inputList[0].connection);
+                }else if(parentBlock.nextConnection !== null){
+                    block.previousConnection.connect(parentBlock.nextConnection);
+                }
+            }
         }
 
         textBox.style.visibility = "hidden";
@@ -277,8 +284,6 @@ function runCode() {
     // $("#sketchjs-container").append('<script id="sketchjs" src="sketch.js"></script>');
     // draw();
 
-    // window.sketchCode = document.getElementById("outputArea").value;
-    // runSketch();
 }
 
 function setBlobUrl(id, content) {

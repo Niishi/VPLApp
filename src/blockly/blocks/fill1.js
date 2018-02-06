@@ -3,7 +3,7 @@ Blockly.Blocks["void_fill"] = {
 		this.appendDummyInput()
 			.appendField("fill")
 		this.appendValueInput("input_0")
-			.setCheck("Number")
+			.setCheck(["Number", "Colour"])
 			.appendField("gray")
 		this.setColour(230);
 		this.setInputsInline(true);

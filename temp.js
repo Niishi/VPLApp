@@ -14,5 +14,8 @@ draw = function(){
   x = x + 0.1;
   if (y < 0) {
     y = height;
-  } 
+  }
 };
+
+
+rect(100,100,100,100);

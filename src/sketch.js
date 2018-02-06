@@ -1,11 +1,7 @@
-var x, y, z, _E9_A0_85_E7_9B_AE;
+var y;
 
 
-x + 0.1;
-
-y < 0;
-
-x = 0;
+y = 100;
 
 setup = function(){
     var canvas = createCanvas(500,500);
@@ -13,12 +9,12 @@ setup = function(){
 };
 
 draw = function(){
-  background(150);
-  rect(x, 100, 100, 100);
-  x = 0;
+  frameRate(30);
+  background(0);
+  stroke(255);
+  y = y - 0.01;
+  if (y < 0) {
+    y = (height);
+  }
+  line(0, y, (width), y);
 };
-
-y = height;
-
-if (false) {
-}

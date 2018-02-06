@@ -16,8 +16,23 @@ function func1(e) {
         },KEY_TIME);
     }
 }
+
+function blockByCode(code){
+    try {
+        var ast = esprima.parse(code);
+    } catch (e) {
+        console.error("構文エラー");
+        return "error";
+    }
+
+    for (statement of ast.body) {
+        var block = blockByStatement(statement);
+        if(block === null) continue;
+        return block;
+    }
+    return null;
+}
 function codeToBlock() {
-    parentBlock = null;
     var editor = getAceEditor();
     var program = editor.getValue();
     try {
@@ -27,59 +42,14 @@ function codeToBlock() {
         console.error("構文エラー");
         return;
     }
-    var get_node_info = function(node){
 
-        switch (node.type) {
-            case 'Identifier':
-            return node.name;
-            case 'ExpressionStatement':
-            return node.body;
-            case 'FunctionDeclaration':
-            return node.id;
-            case 'Literal':
-            return node.value;
-            default:
-            return node.type;
-        }
-    };
-    estraverse.traverse(ast, {
-        enter: function (node, parent) {
-            // console.log('[enter] ', node.type, ':', get_node_info(node));
-            blockByCode(node);
-        },
-        leave: function (node, parent) {
+    for (statement of ast.body) {
+        var block = blockByStatement(statement);
+        if(block === null) continue;
+        block.moveBy(blockX, blockY);
+        blockY += block.height + blockMargin;
+    }
 
-            switch (node.type) {
-                case 'AssignmentExpression':
-                    isAssignment = false;
-                    if(node.left.name == "setup"){
-                        isSetupFunction = false;
-                    }else if(node.left.name == "draw"){
-                        isDrawFunction = false;
-                        isAssignment = false;
-                    }
-                    break;
-                case 'VariableDeclaration':
-                    isVarDecl = false;
-                    break;
-                case 'CallExpression':
-                    isCallExp = false;
-                    break;
-            }
-
-            if(nodeStack[nodeStack.length-1] === node.type && !isDrawFunction && isExist(parentBlock)){
-                if (isExist(parentBlock.outputConnection)){
-                    parentBlock = parentBlock.outputConnection.targetBlock();
-                } else if (isExist(parentBlock.previousConnection)){
-                    parentBlock = parentBlock.previousConnection.targetBlock();
-                } else {
-                    parentBlock = null;
-                }
-                nodeStack.pop();
-            }
-            // console.log('[leave] ', node.type, ':', get_node_info(node));
-        }
-    });
     blockY = 0;
 }
 function isExist(a) {
@@ -88,242 +58,347 @@ function isExist(a) {
 
 var callFunctionNameList = ["fill","background","rect", "noStroke"];
 var functionNameList = ["setup", "draw"];
-var parentBlock = null;
 
-var isSetupFunction = false;
-var isDrawFunction = false;
-
-var nodeStack = [];
 var blockY = 0;
 var blockX = 100;
 var blockMargin = 30;
 
-var isAssignment = false;
-var isVarDecl = false;
-var isCallExp = false;
 
-var argLength = 0;
-function blockByCode(node) {
-    if(isSetupFunction){
-        return;
-    }
-    switch (node.type) {
-        case 'Identifier':
-            if(isAssignment && !(isSetupFunction || isDrawFunction)){
-                var variable = workspace.getVariable(node.name);
-                parentBlock.getField("VAR").setValue(variable.getId());
-                isAssignment = false;
-            }else if(isVarDecl && !(isSetupFunction || isDrawFunction)){
-                workspace.createVariable(node.name);
-            }else if(isCallExp && !(isSetupFunction || isDrawFunction)){
-                if(!searchBlock(node.name, callFunctionNameList, 'CallExpression')){
-                    var block = createBlock('procedures_callnoreturn','CallExpression');
-                    block.renameProcedure(block.getProcedureCall(), node.name);
-                    var argNameList = [];
-                    var argIdList = [];
-                    idString = getRandomString();
-                    for (var i = 0; i < argLength; i++) {
-                        argNameList.push(""+i);
-                        argIdList.push(idString + i);
-                    }
-                    block.setProcedureParameters_(argNameList, argIdList);
-                }
-                isCallExp = false;
-            }
-            else{
-                switch(node.name){
-                    case 'mouseX':
-                    case 'mouseY':
-                        var block = createBlock(node.name, node.type);
-                        if(parentBlock!== null){
-                            var index = getAkiIndex(parentBlock.inputList);
-                            block.outputConnection.connect(parentBlock.inputList[index].connection);
-                        }
-                        break;
-                    default:
-                        if(!(isSetupFunction || isDrawFunction)){
-                            var block = new Blockly.BlockSvg(workspace, "variables_get");
-                            block.initSvg();
-                            block.render();
-
-                            block.getField("VAR").setValue(node.name);
-                            if(parentBlock!== null){
-                                var index = getAkiIndex(parentBlock.inputList);
-                                block.outputConnection.connect(parentBlock.inputList[index].connection);
-                            }
-                            nodeStack.push("Identifier");
-                            parentBlock = block;
-                        }
-                }
-            }
-            break;
-        case 'AssignmentExpression':
-            isAssignment = true;
-            if(node.left.name == "setup"){
-                isSetupFunction = true;
-                var block = new Blockly.BlockSvg(workspace, "setup");
-                block.moveBy(blockX, blockY);
-                block.initSvg();
-                block.render();
-                parentBlock = block;
-                blockY += parentBlock.height + blockMargin;
-                nodeStack.push("AssignmentExpression");
-            }else if(node.left.name == "draw"){
-                isDrawFunction = true;
-                var block = new Blockly.BlockSvg(workspace, "draw");
-                block.moveBy(blockX, blockY);
-                block.initSvg();
-                block.render();
-                parentBlock = block;
-                blockY += parentBlock.height + blockMargin;
-                nodeStack.push("AssignmentExpression");
-            } else {
-                createBlockByName("variables_set", node.type);
-            }
-            break;
+function blockByStatement(statement) {
+    switch(statement.type){
+        case 'BlockStatement':
+            return blockStatementBlock(statement);
         case 'ExpressionStatement':
-            var expression = node.expression;
-            if(expression.type === 'CallExpression'){
-                argLength = expression.arguments.length;
-            }
-            break;
-        case 'CallExpression':
-            callExpressionBlock(node);
-            isCallExp = true;
-            break;
-        case 'VariableDeclaration':
-            isVarDecl = true;
-            break;
-        case 'VariableDeclarator':
-            name = "";
-            break;
-        case 'FunctionExpression':
-            if(isDrawFunction){
-                isDrawFunction = false;
-                isAssignment = false;
-            }
-            break;
-        case 'FunctionDeclaration':
-            if(isDrawFunction){
-                isDrawFunction = false;
-                isAssignment = false;
-                break;
-            }else{
-                searchBlock(node.id.name, functionNameList, node.type);
-                break;
-            }
+            return blockByExpression(statement.expression, true);
         case 'IfStatement':
-            if(node.alternate === null){
-                //ただのif文(elseなし)
-                createBlockByName('controls_if', node.type);
-            }else{
-                //if else文
-                createBlockByName('controls_ifelse', node.type);
-            }
-            break;
-        case 'Literal':
-            if(isColor(node.value)){
-                var block = new Blockly.BlockSvg(workspace, "colour_picker");
-                block.initSvg();
-                block.render();
-
-                block.inputList[0].fieldRow[0].setValue(node.value);
-
-                if(parentBlock!== null){
-                    var index = getAkiIndex(parentBlock.inputList);
-                    block.outputConnection.connect(parentBlock.inputList[index].connection);
-                }
-                nodeStack.push("Literal");
-                parentBlock = block;
-            }
-            else if(!isNaN(node.value)){
-                var block = new Blockly.BlockSvg(workspace, "math_number");
-                block.initSvg();
-                block.render();
-
-                block.inputList[0].fieldRow[0].setValue(node.value);
-                if(parentBlock!== null){
-                    var index = getAkiIndex(parentBlock.inputList);
-                    block.outputConnection.connect(parentBlock.inputList[index].connection);
-                }
-                nodeStack.push("Literal");
-                parentBlock = block;
-            }
-            break;
-        case 'BinaryExpression':
-            var block = null;
-            switch(node.operator) {
-                case "+":
-                    block = createBlock("math_arithmetic", node.type);
-                    block.getField("OP").setValue("ADD");
-                    break;
-                case "-":
-                    block = createBlock("math_arithmetic", node.type);
-                    block.getField("OP").setValue("MINUS");
-                    break;
-                case "*":
-                    block = createBlock("math_arithmetic", node.type);
-                    block.getField("OP").setValue("MULTIPLY");
-                    break;
-                case "/":
-                    block = createBlock("math_arithmetic", node.type);
-                    block.getField("OP").setValue("DIVIDE");
-                    break;
-                case '==':
-                    block = createBlock("logic_compare", node.type);
-                    block.getField("OP").setValue("EQ");
-                    break;
-                case '!=':
-                    block = createBlock("logic_compare", node.type);
-                    block.getField("OP").setValue("NEQ");
-                    break;
-                case '<=':
-                    block = createBlock("logic_compare", node.type);
-                    block.getField("OP").setValue("LTE");
-                    break;
-                case '<':
-                    block = createBlock("logic_compare", node.type);
-                    block.getField("OP").setValue("LT");
-                    break;
-                case '>=':
-                    block = createBlock("logic_compare", node.type);
-                    block.getField("OP").setValue("RTE");
-                    break;
-                case '>':
-                    block = createBlock("logic_compare", node.type);
-                    block.getField("OP").setValue("RT");
-                    break;
-            }
-            // block.initSvg();
-            // block.render();
-            // if(parentBlock!== null){
-            //     var index = getAkiIndex(parentBlock.inputList);
-            //     block.outputConnection.connect(parentBlock.inputList[index].connection);
-            // }
-            // parentBlock = block;
-            // nodeStack.push("BinaryExpression");
-            break;
+            return ifStatementBlock(statement);
+        case 'WhileStatement':
+            return whileStatementBlock(statement);
+        case 'VariableDeclaration':
+            return variableDeclarationBlock(statement);
+        case 'VariableDeclarator':
+            return variableDeclaratorBlock(statement);
         default:
-        return node.type;
+            errorMessage("blockByStatementでエラー。存在しないstatement=>" + statement.type);
+    }
+}
+/**
+ * statement列からブロック列を生成しその先頭のブロックだけを返す。生成されたブロックは順番通りに連結されている。nullを返すおそれがある。
+ * @param  {json} statement 命令列
+ * @return {Blockly.BlockSvg} 生成されたブロック列の先頭ブロック
+ */
+function blockStatementBlock(statement) {
+    var firstBlock = null;
+    var block = null;
+    for(stm of statement.body){
+        if(block === null){
+            firstBlock = blockByStatement(stm);
+            block = firstBlock;
+        }else{
+            var nextBlock = blockByStatement(stm);
+            combineNextBlock(block, nextBlock);
+            block = nextBlock;
+        }
+    }
+    return firstBlock;
+}
+function ifStatementBlock(statement){
+    var block;
+    if(statement.alternate === null){
+        block = createBlock("controls_if");
+    }else{
+        block = createBlock("controls_ifelse");
+    }
+    var condBlock = blockByExpression(statement.test, false);
+    combineIntoBlock(block, condBlock, 0);
+    var stmBlock = blockByStatement(statement.consequent);
+    combineStatementBlock(block, stmBlock, 1);
+    if(statement.alternate !== null){
+        stmBlock = blockByStatement(statement.alternate);
+        combineStatementBlock(block, stmBlock, 2);
+    }
+    return block;
+}
+
+function whileStatementBlock(statement) {
+    var block = createBlock('controls_whileUntil');
+    var condBlock = blockByExpression(statement.test, false);
+    combineIntoBlock(block,condBlock);
+    var stmBlock = blockByStatement(statement.body);
+    combineStatementBlock(block, stmBlock,1);
+    return block;
+}
+
+//@NOTE : 現在kind('var', 'const', 'let')は無視している
+function variableDeclarationBlock(statement) {
+    var firstBlock = null;
+    var block = null;
+    for (declaration of statement.declarations) {
+        var nextBlock = blockByStatement(declaration);
+        if(block === null && nextBlock !== null){
+            firstBlock = nextBlock;
+            block = nextBlock;
+        }else if(block !== null && nextBlock !== null){
+            combineNextBlock(block, nextBlock);
+            block = nextBlock;
+        }
+    }
+    return firstBlock;
+}
+
+//@NOTE idのBindingPatternに対応していない
+function variableDeclaratorBlock(statement) {
+    if(statement.id.type === 'Identifier'){
+        var name = statement.id.name;
+        createVariable(name);
+        if(statement.init !== null){
+            var block = createBlock("variables_set");
+            var variable = workspace.getVariable(name);
+            block.getField("VAR").setValue(variable.getId());
+            var rightHandBlock = blockByExpression(statement.init, false);
+            combineIntoBlock(block, rightHandBlock);
+            return block;
+        }
+        return null;
+    }else{
+        errorMessage("VariableDeclaratorにおいて以下のタイプに対応していない : " + statement.id.type);
+    }
+}
+/**
+ * 式からブロックを生成する。呼び出された情報がExpressionStatementであるかどうかによって変更を行う。
+ * @param  {json}  expression  [description]
+ * @param  {Boolean} isStatement [description]
+ * @return {Blockly.BlockSvg}              [description]
+ */
+function blockByExpression(expression, isStatement) {
+    switch (expression.type) {
+        case 'AssignmentExpression':
+            return assignmentExpressionBlock(expression);
+        case 'BinaryExpression':
+            return binaryExpressionBlock(expression);
+        case 'CallExpression':
+            return callExpressionBlock(expression, isStatement);
+        case 'Identifier':
+            return identiferBlock(expression);
+        case 'Literal':
+            return literalBlock(expression);
+        case 'UnaryExpression':
+            return unaryExpressionBlock(expression);
+        default:
+            errorMessage("blockByExpressionでエラー。該当しないExpression=>" + expression.type);
+            return null;
     }
 }
 
-function callExpressionBlock(node){
+function assignmentExpressionBlock(node) {
+    if(node.left.name == "setup"){
+        return createBlock("setup");
+    }else if(node.left.name == "draw"){
+        var block = createBlock("draw");
+        var stmBlock = blockByStatement(node.right.body);
+        combineStatementBlock(block, stmBlock, 0);
+        return block;
+    } else {
+        var block = createBlock("variables_set");
+        var name = node.left.name;
+        createVariable(name);
+        var variable = workspace.getVariable(name);
+        block.getField("VAR").setValue(variable.getId());
+        var rightHandBlock = blockByExpression(node.right, false);
+        combineIntoBlock(block, rightHandBlock);
+        return block;
+    }
+}
+
+function callExpressionBlock(node, isStatement){
     var name = node.callee.name;
-    if(!searchBlock(node.name, callFunctionNameList, 'CallExpression')){
-        var block = createBlock('procedures_callnoreturn','CallExpression');
-        block.renameProcedure(block.getProcedureCall(), node.name);
-        var argNameList = [];
-        var argIdList = [];
-        idString = getRandomString();
-        for (var i = 0; i < argLength; i++) {
-            argNameList.push(""+i);
-            argIdList.push(idString + i);
+    var block;
+    if(name === "fill"){
+        name = "void_fill";
+        block = createBlock(name);
+    }else{
+        block = searchBlock(name, callFunctionNameList);
+    }
+    if(!block){
+        if(isStatement){
+            block = createBlock('no_return_function');
+            block.getField('FUNCTION_NAME').setValue(name);
+            block.createValueInput(node.arguments.length);
+        }else{
+            block = createBlock('return_function');
+            block.getField('FUNCTION_NAME').setValue(name);
+            block.createValueInput(node.arguments.length);
         }
-        block.setProcedureParameters_(argNameList, argIdList);
     }
     for (argument of node.arguments) {
+        var argBlock = blockByExpression(argument, false);
+        var index = getAkiIndex(block.inputList);
+        argBlock.outputConnection.connect(block.inputList[index].connection);
+    }
+    return block;
+}
 
+function identiferBlock(node) {
+    switch(node.name){
+        case 'mouseX':
+        case 'mouseY':
+            return createBlock(node.name);
+        case 'width':
+            var block = createBlock("variable_event");
+            block.getField("NAME").setValue("WIDTH");
+            return block;
+        case 'height':
+            var block = createBlock("variable_event");
+            block.getField("NAME").setValue("HEIGHT");
+            return block;
+        case 'frameCount':
+            var block = createBlock("variable_event");
+            block.getField("NAME").setValue("FRAMECOUNT");
+            return block;
+        default:
+            createVariable(node.name);
+            var variable = workspace.getVariable(node.name);
+            var block = new Blockly.BlockSvg(workspace, "variables_get");
+            block.getField("VAR").setValue(variable.getId());
+            block.initSvg();
+            block.render();
+            return block;
+    }
+}
+
+function literalBlock(node) {
+    if(node.raw === "true" || node.raw === "false"){
+        var block = new Blockly.BlockSvg(workspace, "logic_boolean");
+        block.initSvg();
+        block.render();
+        if(node.raw === "true"){
+            block.inputList[0].fieldRow[0].setValue("TRUE");
+        }else{
+            block.inputList[0].fieldRow[0].setValue("FALSE");
+        }
+        return block;
+    }else if(isColor(node.value)){
+        var block = new Blockly.BlockSvg(workspace, "colour_picker");
+        block.initSvg();
+        block.render();
+        block.inputList[0].fieldRow[0].setValue(node.value);
+        return block;
+    }else if(!isNaN(node.value)){
+        var block = new Blockly.BlockSvg(workspace, "math_number");
+        block.initSvg();
+        block.render();
+
+        block.inputList[0].fieldRow[0].setValue(node.value);
+        return block;
+    }else{
+        errorMessage("literalBlockでエラー。該当しないLiteral=>" + node.value);
+        return null;
+    }
+}
+
+function binaryExpressionBlock(node) {
+    var block = null;
+    switch(node.operator) {
+        case "+":
+            block = createBlock("math_arithmetic", node.type);
+            block.getField("OP").setValue("ADD");
+            break;
+        case "-":
+            block = createBlock("math_arithmetic", node.type);
+            block.getField("OP").setValue("MINUS");
+            break;
+        case "*":
+            block = createBlock("math_arithmetic", node.type);
+            block.getField("OP").setValue("MULTIPLY");
+            break;
+        case "/":
+            block = createBlock("math_arithmetic", node.type);
+            block.getField("OP").setValue("DIVIDE");
+            break;
+        case '==':
+            block = createBlock("logic_compare", node.type);
+            block.getField("OP").setValue("EQ");
+            break;
+        case '!=':
+            block = createBlock("logic_compare", node.type);
+            block.getField("OP").setValue("NEQ");
+            break;
+        case '<=':
+            block = createBlock("logic_compare", node.type);
+            block.getField("OP").setValue("LTE");
+            break;
+        case '<':
+            block = createBlock("logic_compare", node.type);
+            block.getField("OP").setValue("LT");
+            break;
+        case '>=':
+            block = createBlock("logic_compare", node.type);
+            block.getField("OP").setValue("GTE");
+            break;
+        case '>':
+            block = createBlock("logic_compare", node.type);
+            block.getField("OP").setValue("GT");
+            break;
+    }
+    var leftBlock = blockByExpression(node.left,false);
+    var rightBlock = blockByExpression(node.right,false);
+    combineIntoBlock(block, leftBlock);
+    combineIntoBlock(block, rightBlock);
+    return block;
+}
+
+//@TODO 単項演算子ブロックの追加
+function unaryExpressionBlock(node) {
+    switch (node.operator) {
+        case '-':
+
+            return block;
+        default:
+            errorMessage("UnaryExpressionで定義されていないoperator : " + node.operator);
+    }
+}
+
+/**
+ * msgの内容をエラーとして出力する
+ * @param  {String} msg エラーメッセージ
+ */
+function errorMessage(msg) {
+    alert(msg);
+    console.error(msg);
+}
+/**
+ * parentブロックの中にchildブロックを入れこませる
+ * @param {Block} parent [入れられる側のブロック]
+ * @param {Block} child [入れる側のブロック]
+*/
+function combineIntoBlock(parent, child) {
+    if(parent === null || child === null) return;
+    var index = getAkiIndex(parent.inputList);
+    child.outputConnection.connect(parent.inputList[index].connection);
+}
+
+/**
+ * inputListに接続する時，indexを指定できるようにしたもの
+ * @param  {Blockly.BlockSvg} parent [description]
+ * @param  {Blockly.BlockSvg} child  [description]
+ * @param  {integer} index  inputListに指定するindex
+ */
+function combineStatementBlock(parent, child, index) {
+    if(parent === null || child === null) return;
+    child.previousConnection.connect(parent.inputList[index].connection);
+}
+
+/**
+ * preが上に来るようにpostをつなげる
+ * @param  {Blockly.BlockSvg} pre  上のブロック
+ * @param  {Blockly.BlockSvg} post 下のブロック
+ */
+function combineNextBlock(pre, post) {
+    if(pre === null || post === null) return;
+    if(pre.nextConnection !== null){
+        post.previousConnection.connect(pre.nextConnection);
+    }else{
+        errorMessage("combineNextBlockにて接続できない" + pre + "\n"+ post);
     }
 }
 
@@ -339,68 +414,41 @@ function getAkiIndex(inputList) {
     console.error("インデックスの空きが見つかりませんでした");
     return -1;
 }
-function searchBlock(name, list, type) {
+
+function searchBlock(name, list) {
     for(name1 of list){
         if(name1 === name){
             console.log(name);
-            createBlockByName(name, type);
-            return true;
+            return createBlock(name);
         }
     }
-    return false;
+    return null;
+}
+
+/**
+ * nameがすでに宣言されているかチェックし、なければ新しく追加する
+ * @param {String} name 変数名
+*/
+function createVariable(name) {
+    if(workspace.variableIndexOf(name) == -1){
+        workspace.createVariable(name);
+    }
 }
 
 function isColor (color) {
     if(!isNaN(color)) return false;
     return color.match(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/) !== null;
 }
-
-function createBlock(name, type){
+/**
+ * 指定されたnameから対応するブロックを生成する
+ * @param  {String} name ブロック名
+ * @return {Block}      ブロックを返す
+ */
+function createBlock(name){
     var block = new Blockly.BlockSvg(workspace, name);
     block.initSvg();
     block.render();
-    if(parentBlock === null){
-        block.moveBy(blockX, blockY);
-        blockY += block.height + blockMargin;
-    }
-    if(parentBlock !== null && block.previousConnection !== null){
-        var childBlocks = parentBlock.getChildren();
-        if(childBlocks.length == 0){
-            if(parentBlock.inputList[0].connection != null){
-                block.previousConnection.connect(parentBlock.inputList[0].connection);
-            }else if(parentBlock.nextConnection !== null){
-                block.previousConnection.connect(parentBlock.nextConnection);
-            }
-        }else{
-            block.previousConnection.connect(childBlocks[childBlocks.length-1].nextConnection);
-        }
-    }
-    nodeStack.push(type);
-    parentBlock = block;
     return block;
-}
-function createBlockByName(name, type){
-    var block = new Blockly.BlockSvg(workspace, name);
-    block.initSvg();
-    block.render();
-    if(parentBlock === null){
-        block.moveBy(blockX, blockY);
-        blockY += block.height + blockMargin;
-    }
-    if(parentBlock !== null && block.previousConnection !== null){
-        var childBlocks = parentBlock.getChildren();
-        if(childBlocks.length == 0){
-            if(parentBlock.inputList[0].connection != null){
-                block.previousConnection.connect(parentBlock.inputList[0].connection);
-            }else if(parentBlock.nextConnection !== null){
-                block.previousConnection.connect(parentBlock.nextConnection);
-            }
-        }else{
-            block.previousConnection.connect(childBlocks[childBlocks.length-1].nextConnection);
-        }
-    }
-    nodeStack.push(type);
-    parentBlock = block;
 }
 
 function getRandomString(){
