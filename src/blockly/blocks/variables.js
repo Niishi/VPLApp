@@ -48,12 +48,16 @@ Blockly.defineBlocksWithJsonArray([  // BEGIN JSON EXTRACT
   // Block for variable getter.
   {
     "type": "variables_get",
-    "message0": "%1",
+    "message0": "%1 %2",
     "args0": [
       {
         "type": "field_variable",
         "name": "VAR",
         "variable": "%{BKY_VARIABLES_DEFAULT_NAME}"
+      },
+      {
+        "type": "input_value",
+        "name": "member"
       }
     ],
     "output": null,

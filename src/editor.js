@@ -69,9 +69,11 @@ function blockByStatement(statement) {
         case 'BlockStatement':
             return blockStatementBlock(statement);
         case 'ExpressionStatement':
-            return blockByExpression(statement.expression, true);
+            return expressionStatementBlock(statement);
         case 'ForStatement':
             return forStatementBlock(statement);
+        case 'FunctionDeclaration':
+            return functionDeclarationBlock(statement);
         case 'IfStatement':
             return ifStatementBlock(statement);
         case 'WhileStatement':
@@ -98,26 +100,67 @@ function blockStatementBlock(statement) {
             block = firstBlock;
         }else{
             var nextBlock = blockByStatement(stm);
-            combineNextBlock(block, nextBlock);
-            block = nextBlock;
+            if(nextBlock !== null){
+                combineNextBlock(block, nextBlock);
+                block = nextBlock;
+            }
         }
     }
     return firstBlock;
 }
 
-function forStatementBlock(statement) {
-    var block = createBlock('controls_for');
+function expressionStatementBlock(statement) {
+    if(statement.expression.type === 'CallExpression') return blockByExpression(statement.expression, true);
+    var exprBlock = blockByExpression(statement.expression, true);
+    if(exprBlock.type === 'setup' || exprBlock.type === 'draw') return exprBlock;
+    var block = createBlock('expression_statement');
+    combineIntoBlock(block,exprBlock);
+    return block;
+}
 
-    var initBlock = blockByStatement(statement.init);
+function forStatementBlock(statement) {
+    var block = createBlock('my_for');
+
+    var initBlock = blockByExpression(statement.init);
     var testBlock = blockByExpression(statement.test);
     var updateBlock = blockByExpression(statement.update);
     var stmBlock = blockByStatement(statement.body);
-    combineStatementBlock(block, initBlock, 0);
-    combineStatementBlock(block, testBlock, 1);
-    combineStatementBlock(block, updateBlock, 3);
-    combineStatementBlock(block, stmBlock, 2);
+    combineIntoBlock(block, initBlock);
+    combineIntoBlock(block, testBlock);
+    combineIntoBlock(block, updateBlock);
+    combineStatementBlock(block, stmBlock, 3);
 
     return block;
+}
+
+/**
+ * 関数定義のブロックを返す
+ * @param  {JSON} statement
+ * @return {Block}
+ */
+function functionDeclarationBlock(statement){
+    const name = statement.id.name;
+    const params = statement.params;
+    if (name == 'setup') {
+        return createBlock('setup');
+    } else if (name == 'draw') {
+        block = createBlock('draw');
+        let stmBlock = blockByStatement(statement.body);
+        combineStatementBlock(block, stmBlock, 0);
+        return block;
+    } else {
+        var block = createBlock('decl_function');
+        block.getField('NAME').setValue(name);
+        block.createValueInput(params.length);
+        let stmBlock = blockByStatement(statement.body);
+        let i = 0;
+        for(param of params){
+            block.getField("PARAM" + i).setValue(param.name);
+            i++;
+        }
+        combineStatementBlock(block, stmBlock, 1);
+        return block;
+    }
 }
 /**
  * if文のブロックを作成する
@@ -151,7 +194,7 @@ function whileStatementBlock(statement) {
     return block;
 }
 
-//@NOTE : 現在kind('var', 'const', 'let')は無視している
+//NOTE : 現在kind('var', 'const', 'let')は無視している
 function variableDeclarationBlock(statement) {
     var firstBlock = null;
     var block = null;
@@ -159,16 +202,16 @@ function variableDeclarationBlock(statement) {
         var nextBlock = blockByStatement(declaration);
         if(block === null && nextBlock !== null){
             firstBlock = nextBlock;
-            block = nextBlock;
         }else if(block !== null && nextBlock !== null){
             combineNextBlock(block, nextBlock);
-            block = nextBlock;
         }
+        block = nextBlock;
     }
+
     return firstBlock;
 }
 
-//@NOTE idのBindingPatternに対応していない
+//NOTE idのBindingPatternに対応していない
 function variableDeclaratorBlock(statement) {
     if(statement.id.type === 'Identifier'){
         var name = statement.id.name;
@@ -181,6 +224,7 @@ function variableDeclaratorBlock(statement) {
             combineIntoBlock(block, rightHandBlock);
             return block;
         }
+        //TODO: nullを返してしまっている
         return null;
     }else{
         errorMessage("VariableDeclaratorにおいて以下のタイプに対応していない : " + statement.id.type);
@@ -194,6 +238,8 @@ function variableDeclaratorBlock(statement) {
  */
 function blockByExpression(expression, isStatement) {
     switch (expression.type) {
+        case 'ArrayExpression':
+            return arrayExpressionBlock(expression);
         case 'AssignmentExpression':
             return assignmentExpressionBlock(expression);
         case 'BinaryExpression':
@@ -204,6 +250,10 @@ function blockByExpression(expression, isStatement) {
             return identiferBlock(expression);
         case 'Literal':
             return literalBlock(expression);
+        case 'LogicalExpression':
+            return logicalExpressionBlock(expression);
+        case 'MemberExpression':
+            return memberExpressionBlock(expression);
         case 'UnaryExpression':
             return unaryExpressionBlock(expression);
         case 'UpdateExpression':
@@ -214,6 +264,24 @@ function blockByExpression(expression, isStatement) {
     }
 }
 
+/**
+ * 配列を作成しブロックとして返す。
+ * 配列の要素数に応じて配列ブロックのインプットを増やす。
+ * @param  {JSON} node [expression]
+ * @return {Block}      生成したブロック
+ */
+function arrayExpressionBlock(node){
+    var block = createBlock("array_block");
+    const elements = node.elements;
+    block.createValueInput(elements.length);
+    for (element of elements) {
+        var argBlock = blockByExpression(element, false);
+        var index = getAkiIndex(block.inputList);
+        argBlock.outputConnection.connect(block.inputList[index].connection);
+    }
+    return block;
+}
+
 function assignmentExpressionBlock(node) {
     if(node.left.name == "setup"){
         return createBlock("setup");
@@ -222,12 +290,12 @@ function assignmentExpressionBlock(node) {
         var stmBlock = blockByStatement(node.right.body);
         combineStatementBlock(block, stmBlock, 0);
         return block;
-    } else {
-        var block = createBlock("variables_set");
+    }else{
+        var block = createBlock("assingment_expression");
         var name = node.left.name;
         createVariable(name);
         var variable = workspace.getVariable(name);
-        block.getField("VAR").setValue(variable.getId());
+        block.getField("NAME").setValue(variable.getId());
         var rightHandBlock = blockByExpression(node.right, false);
         combineIntoBlock(block, rightHandBlock);
         return block;
@@ -320,6 +388,51 @@ function literalBlock(node) {
     }
 }
 
+function logicalExpressionBlock(node){
+    var block = createBlock("logic_operation");
+    var leftBlock = blockByExpression(node.left, false);
+    var rightBlock = blockByExpression(node.right, false);
+    if(node.operator === '||'){
+        block.getField('OP').setValue('OR');
+    }else if(node.operator === '&&'){
+        block.getField('OP').setValue('AND');
+    }else{
+        errorMessage("logicalExpressionBlock()において次のnode.operatorが存在しない: " + node.operator);
+    }
+    combineIntoBlock(block, leftBlock);
+    combineIntoBlock(block, rightBlock);
+
+    return block;
+}
+
+/**
+ * 現在は配列の要素指定のみ実現している。
+ * x.func()やthis.xなどはまだ実装されていないので要実装
+ * @param  {JSON} expression
+ * @return {Block}
+ */
+function memberExpressionBlock(node){
+    var block;
+    if(node.computed){
+        block = createBlock("array_member");
+        nameBlock = blockByExpression(node.object, false);
+        indexBlock = blockByExpression(node.property, false);
+        combineIntoBlock(block, nameBlock);
+        combineIntoBlock(block, indexBlock);
+    } else {
+        block = blockByExpression(node.object, false);
+        let rightBlock;
+        if(node.property.type === "Identifier"){
+            rightBlock = createBlock("member_block");
+            rightBlock.getField("NAME").setValue(node.property.name);
+        }else{
+            rightBlock = blockByExpression(node.property, false);
+        }
+        combineIntoBlock(block, rightBlock);
+    }
+    return block;
+}
+
 function binaryExpressionBlock(node) {
     var block = null;
     switch(node.operator) {
@@ -371,15 +484,36 @@ function binaryExpressionBlock(node) {
     return block;
 }
 
-//@TODO 単項演算子ブロックの追加
 function unaryExpressionBlock(node) {
+    var block = createBlock('unary');
+    var argBlock = blockByExpression(node.argument, false);
+    combineIntoBlock(block, argBlock);
     switch (node.operator) {
         case '-':
-
-            return block;
+            block.getField('OP').setValue('MINUS');
+            break;
+        case '+':
+            block.getField('OP').setValue('PLUS');
+            break;
+        case '~':
+            block.getField('OP').setValue('CHILDA');
+            break;
+        case '!':
+            block.getField('OP').setValue('NOT');
+            break;
+        case 'typeof':
+            block.getField('OP').setValue('TYPEOF');
+            break;
+        case 'void':
+            block.getField('OP').setValue('VOID');
+            break;
+        case 'delete':
+            block.getField('OP').setValue('DELETE');
+            break;
         default:
             errorMessage("UnaryExpressionで定義されていないoperator : " + node.operator);
     }
+    return block;
 }
 
 function updateExpressionBlock(node) {
@@ -471,8 +605,6 @@ function createVariable(name) {
         workspace.createVariable(name);
     }
 }
-
-
 
 function isColor (color) {
     if(!isNaN(color)) return false;

@@ -36,7 +36,7 @@
       canvas.height = 100;
     }
   }
-
+//esprima => estraverse => escodegen
   global.runSketch = function(callback) {
     try {
       if (instance) { instance.noLoop(); }

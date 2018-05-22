@@ -210,14 +210,18 @@ document.getElementById("blockTextBox").onkeypress = function(e){
         textBox.style.visibility = "hidden";
     }
     if(e.keyCode === 108){
-        var allBlocks = workspace.getAllBlocks();
-        for(block of allBlocks){
-            console.log(block);
-        }
+        // var allBlocks = workspace.getAllBlocks();
+        // for(block of allBlocks){
+        //     console.log(block);
+        // }
+        console.log(getSelectedBlock());
     }
 
 }
-
+/**
+ * 現在選択中のブロックを返す
+ * @return {Blockly.BlockSvg} 選択ちゅうのブロック
+ */
 function getSelectedBlock() {
     return Blockly.selected;
 }

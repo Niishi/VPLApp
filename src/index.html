@@ -31,6 +31,7 @@
 
   <script src="blockly/blocks/input_mouse.js"></script>
 
+  <script src="blockly/blocks/array.js"></script>
   <script src="blockly/blocks/setup.js"></script>
   <script src="blockly/blocks/size.js"></script>
   <script src="blockly/blocks/background.js"></script>
@@ -46,6 +47,8 @@
   <script src="blockly/blocks/variable_event.js"></script>
   <script src="blockly/blocks/myProcedure.js"></script>
   <script src="blockly/blocks/updateExpression.js"></script>
+  <script src="blockly/blocks/my_for.js"></script>
+  <script src="blockly/blocks/etc.js"></script>
 
   <!--ソースコードジェネレーターモジュール-->
   <script src="blockly/generators/p5js/logic.js"></script>
@@ -57,6 +60,7 @@
 
 
   <script src="blockly/generators/p5js/setup.js"></script>
+  <script src="blockly/generators/p5js/array.js"></script>
   <script src="blockly/generators/p5js/size.js"></script>
   <script src="blockly/generators/p5js/background.js"></script>
   <script src="blockly/generators/p5js/fill.js"></script>
@@ -70,6 +74,8 @@
   <script src="blockly/generators/p5js/createCanvas1.js"></script>
   <script src="blockly/generators/p5js/myProcedure.js"></script>
   <script src="blockly/generators/p5js/updateExpression.js"></script>
+  <script src="blockly/generators/p5js/my_for.js"></script>
+  <script src="blockly/generators/p5js/etc.js"></script>
 
   <script src="blockly/generators/p5js/input_mouse.js"></script>
   <script src="blockly/generators/p5js/variable_event.js"></script>
@@ -160,11 +166,14 @@
             <block type="controls_for"></block>
             <block type="controls_forEach"></block>
             <block type="controls_flow_statements"></block>
+            <block type="my_for"></block>
         </category>
         <category name = "Variables" custom="VARIABLE">
             <block type="variables_set"></block>
             <block type="variables_get"></block>
             <block type="updateexpression"></block>
+            <block type="assingment_expression"></block>
+            <block type="member_block"></block>
         </category>
         <category name = "Procedures" custom="PROCEDURE">
             <block type="procedures_defreturn"></block>
@@ -172,8 +181,7 @@
             <block type="procedures_callreturn"></block>
             <block type="procedures_callnoreturn"></block>
             <block type="procedures_ifreturn"></block>
-            <block type="no_return_function"></block>
-            <block type="return_function"></block>
+
         </category>
         <category name = "math">
             <block type="math_number"></block>
@@ -197,6 +205,12 @@
         <block type="ellipse"></block>
         <block type="void_createCanvas"></block>
         <block type="Canvas_createCanvas"></block>
+        <block type="expression_statement"></block>
+        <block type="no_return_function"></block>
+        <block type="array_block"></block>
+        <block type="array_member"></block>
+        <block type="unary"></block>
+
     </category>
   </xml>
 

@@ -33,6 +33,8 @@ Blockly.p5js['variables_get'] = function(block) {
   // Variable getter.
   var code = Blockly.p5js.variableDB_.getName(block.getFieldValue('VAR'),
       Blockly.Variables.NAME_TYPE);
+  var value_member = Blockly.p5js.valueToCode(block, 'member', Blockly.p5js.ORDER_ATOMIC);
+  if(value_member != "") code += "." + value_member;
   return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
