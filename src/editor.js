@@ -118,13 +118,31 @@ function expressionStatementBlock(statement) {
     return block;
 }
 
+/**
+ * 初期化式がExpressionかVariableDeclarationかによって
+ * for文の形を変えて返す
+ * @param  {JSON} statement 文
+ * @return {Block} block 生成したブロック
+ */
 function forStatementBlock(statement) {
-    var block = createBlock('my_for');
+    if(statement.init.type == 'VariableDeclaration'){
+        var block = createBlock('for_decl');
+        var initBlock = blockByStatement(statement.init);
+        var testBlock = blockByExpression(statement.test);
+        var updateBlock = blockByExpression(statement.update);
+        var stmBlock = blockByStatement(statement.body);
+        combineStatementBlock(block, initBlock, 0);
+        combineIntoBlock(block, testBlock);
+        combineIntoBlock(block, updateBlock);
+        combineStatementBlock(block, stmBlock, 3);
 
-    var initBlock = blockByExpression(statement.init);
-    var testBlock = blockByExpression(statement.test);
+        return block;
+    }
+    var block = createBlock('my_for');
+    var initBlock   = blockByExpression(statement.init);
+    var testBlock   = blockByExpression(statement.test);
     var updateBlock = blockByExpression(statement.update);
-    var stmBlock = blockByStatement(statement.body);
+    var stmBlock    = blockByStatement(statement.body);
     combineIntoBlock(block, initBlock);
     combineIntoBlock(block, testBlock);
     combineIntoBlock(block, updateBlock);
@@ -142,7 +160,10 @@ function functionDeclarationBlock(statement){
     const name = statement.id.name;
     const params = statement.params;
     if (name == 'setup') {
-        return createBlock('setup');
+        block = createBlock('setup');
+        // let stmBlock = blockByStatement(statement.body);
+        // combineStatementBlock(block, stmBlock, 0);
+        return block;
     } else if (name == 'draw') {
         block = createBlock('draw');
         let stmBlock = blockByStatement(statement.body);
@@ -198,8 +219,9 @@ function whileStatementBlock(statement) {
 function variableDeclarationBlock(statement) {
     var firstBlock = null;
     var block = null;
+    const kind = statement.kind;
     for (declaration of statement.declarations) {
-        var nextBlock = blockByStatement(declaration);
+        var nextBlock = variableDeclaratorBlock(declaration, kind);
         if(block === null && nextBlock !== null){
             firstBlock = nextBlock;
         }else if(block !== null && nextBlock !== null){
@@ -212,20 +234,31 @@ function variableDeclarationBlock(statement) {
 }
 
 //NOTE idのBindingPatternに対応していない
-function variableDeclaratorBlock(statement) {
+function variableDeclaratorBlock(statement, kind) {
     if(statement.id.type === 'Identifier'){
         var name = statement.id.name;
         createVariable(name);
+        var block = createBlock("var_decl");
+        var variable = workspace.getVariable(name);
+        block.getField("NAME").setValue(variable.getId());
+        switch(kind){
+            case 'var':
+                block.getField('KIND').setValue('VAR');
+                break;
+            case 'let':
+                block.getField('KIND').setValue('LET');
+                break;
+            case 'const':
+                block.getField('KIND').setValue('CONST');
+                break;
+            default:
+                errorMessage('variableDeclaratorBlockにおいて以下の変数の種類が定義できません: ' + kind);
+        }
         if(statement.init !== null){
-            var block = createBlock("variables_set");
-            var variable = workspace.getVariable(name);
-            block.getField("VAR").setValue(variable.getId());
             var rightHandBlock = blockByExpression(statement.init, false);
             combineIntoBlock(block, rightHandBlock);
-            return block;
         }
-        //TODO: nullを返してしまっている
-        return null;
+        return block;
     }else{
         errorMessage("VariableDeclaratorにおいて以下のタイプに対応していない : " + statement.id.type);
     }
@@ -283,19 +316,50 @@ function arrayExpressionBlock(node){
 }
 
 function assignmentExpressionBlock(node) {
-    if(node.left.name == "setup"){
-        return createBlock("setup");
-    }else if(node.left.name == "draw"){
-        var block = createBlock("draw");
-        var stmBlock = blockByStatement(node.right.body);
+    var block;
+    var name = node.left.name;
+    if (name == 'setup') {
+        block = createBlock('setup');
+        // let stmBlock = blockByStatement(statement.body);
+        // combineStatementBlock(block, stmBlock, 0);
+        return block;
+    } else if (name == 'draw') {
+        block = createBlock('draw');
+        let stmBlock = blockByStatement(node.right.body);
         combineStatementBlock(block, stmBlock, 0);
         return block;
-    }else{
+    } else {
         var block = createBlock("assingment_expression");
         var name = node.left.name;
         createVariable(name);
         var variable = workspace.getVariable(name);
         block.getField("NAME").setValue(variable.getId());
+        switch(node.operator){
+            case '=':
+                block.getField('OP').setValue('EQ');
+                break;
+            case '+=':
+                block.getField('OP').setValue('ADD');
+                break;
+            case '-=':
+                block.getField('OP').setValue('SUB');
+                break;
+            case '*=':
+                block.getField('OP').setValue('MULT');
+                break;
+            case '/=':
+                block.getField('OP').setValue('DIVISION');
+                break;
+            case '%=':
+                block.getField('OP').setValue('AMARI');
+                break;
+            case '**=':
+                block.getField('OP').setValue('BEKI');
+                break;
+            default:
+                errorMessage("AssignmentExpressionのブロック変換において、以下のoperatorは定義されていません: " +
+                  node.operator + "\n\n面倒くさくて実装していません。本当にごめんなさい。")
+        }
         var rightHandBlock = blockByExpression(node.right, false);
         combineIntoBlock(block, rightHandBlock);
         return block;

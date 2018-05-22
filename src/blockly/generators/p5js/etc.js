@@ -38,11 +38,36 @@ Blockly.p5js['unary'] = function(block) {
 
 Blockly.p5js['assingment_expression'] = function(block) {
   var variable_name = Blockly.p5js.variableDB_.getName(block.getFieldValue('NAME'), Blockly.Variables.NAME_TYPE);
+  var dropdown_op = block.getFieldValue('OP');
+  switch(dropdown_op){
+      case 'EQ':
+          dropdown_op = '=';
+          break;
+      case 'ADD':
+          dropdown_op = '+=';
+          break;
+      case 'SUB':
+          dropdown_op = '-=';
+          break;
+      case 'MULT':
+          dropdown_op = '*=';
+          break;
+      case 'DIVISION':
+          dropdown_op = '/=';
+          break;
+      case 'AMARI':
+          dropdown_op = '%=';
+          break;
+      case 'BEKI':
+          dropdown_op = '**=';
+          break;
+      default:
+          errorMessage("assingment_expressionブロックのテキスト変換において、以下のoperatorは定義されていません: " +
+            dropdown_op + "\n\n面倒くさくて実装していません。本当にごめんなさい。")
+  }
   var value_val = Blockly.p5js.valueToCode(block, 'VAL', Blockly.p5js.ORDER_ATOMIC);
-  // TODO: Assemble p5js into code variable.
-  var code = variable_name + ' = ' + value_val;
-  // TODO: Change ORDER_NONE to the correct strength.
-  return [code, Blockly.p5js.ORDER_NONE];
+  var code = variable_name + ' ' + dropdown_op + ' ' + value_val;
+  return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
 Blockly.p5js['member_block'] = function(block) {

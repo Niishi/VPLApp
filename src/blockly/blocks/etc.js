@@ -37,17 +37,17 @@ Blockly.Blocks['constants'] = {
 };
 
 Blockly.Blocks['assingment_expression'] = {
-  init: function() {
-    this.appendValueInput("VAL")
-        .setCheck(null)
-        .appendField(new Blockly.FieldVariable("item"), "NAME")
-        .appendField("=");
-    this.setInputsInline(true);
-    this.setOutput(true, null);
-    this.setColour(300);
- this.setTooltip("");
- this.setHelpUrl("");
-  }
+    init: function() {
+        this.appendValueInput("VAL")
+            .setCheck(null)
+            .appendField(new Blockly.FieldVariable("item"), "NAME")
+            .appendField(new Blockly.FieldDropdown([["=","EQ"], ["+=","ADD"], ["-=","SUB"], ["*=","MULT"], ["/=","DIVISION"], ["%=","AMARI"], ["**=","BEKI"]]), "OP");
+        this.setInputsInline(true);
+        this.setOutput(true, null);
+        this.setColour(315);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
 };
 
 Blockly.Blocks['member_block'] = {

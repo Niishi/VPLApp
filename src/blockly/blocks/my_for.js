@@ -20,3 +20,25 @@ Blockly.Blocks['my_for'] = {
  this.setHelpUrl("");
   }
 };
+
+Blockly.Blocks['for_decl'] = {
+    init: function() {
+        this.appendStatementInput("NAME")
+            .setCheck(null)
+            .appendField("初期化");
+        this.appendValueInput("COND")
+            .setCheck(null)
+            .appendField("条件");
+        this.appendValueInput("UPDATE")
+            .setCheck(null)
+            .appendField("更新");
+        this.appendStatementInput("STM")
+            .setCheck(null);
+        this.setInputsInline(true);
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(230);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
