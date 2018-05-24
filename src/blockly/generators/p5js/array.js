@@ -1,7 +1,7 @@
 Blockly.p5js['array_block'] = function(block) {
   var code = '[';
   var punctuater = ', ';
-  for(var i = 0; i < block.argLength; i++){
+  for(var i = 0; i < block.argLength-1; i++){
       var value = Blockly.p5js.valueToCode(block, 'value'+i, Blockly.p5js.ORDER_ATOMIC);
       if(i == block.argLength - 2){
           code += value;

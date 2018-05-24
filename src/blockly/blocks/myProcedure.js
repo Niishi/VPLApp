@@ -63,3 +63,26 @@ Blockly.Blocks['decl_function'] = {
         input.init();
     }
 };
+
+Blockly.Blocks['function_expression'] = {
+    init: function() {
+        this.appendDummyInput('TOP')
+            .appendField("関数");
+        this.appendStatementInput("BODY")
+            .setCheck(null);
+        this.setInputsInline(false);
+        this.setOutput(true, null);
+        this.setColour(270);
+        this.setTooltip("");
+        this.setHelpUrl("");
+        this.argLength = 0;
+    },
+    createValueInput: function(count){
+        let input = this.getInput('TOP');
+        for(var i = 0; i < count; i++){
+            input.appendField(new Blockly.FieldTextInput("default"), "PARAM"+i);
+            this.argLength++;
+        }
+        input.init();
+    }
+};

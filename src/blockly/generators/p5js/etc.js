@@ -1,8 +1,7 @@
 Blockly.p5js['expression_statement'] = function(block) {
-  var value_expr = Blockly.p5js.valueToCode(block, 'EXPR', Blockly.p5js.ORDER_ATOMIC);
-  // TODO: Assemble p5js into code variable.
-  var code = value_expr + ';\n';
-  return code;
+    var value_expr = Blockly.p5js.valueToCode(block, 'EXPR', Blockly.p5js.ORDER_ATOMIC);
+    var code = value_expr + ';\n';
+    return code;
 };
 
 Blockly.p5js['unary'] = function(block) {
@@ -74,6 +73,13 @@ Blockly.p5js['member_block'] = function(block) {
     var text_name = block.getFieldValue('NAME');
     var value_member = Blockly.p5js.valueToCode(block, 'member', Blockly.p5js.ORDER_ATOMIC);
     var code = text_name;
-    if(value_member !== "") code += "." + value_member;
+    if(!value_member) code += "." + value_member;
     return [code, Blockly.p5js.ORDER_ATOMIC];
+};
+
+Blockly.p5js['this_expression'] = function(block) {
+  var value_member = Blockly.p5js.valueToCode(block, 'member', Blockly.p5js.ORDER_ATOMIC);
+  var code = 'this';
+  if(!value_member) code += '.' + value_member;
+  return [code, Blockly.p5js.ORDER_ATOMIC];
 };

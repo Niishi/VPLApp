@@ -109,6 +109,14 @@ function blockStatementBlock(statement) {
     return firstBlock;
 }
 
+/**
+ * なるべく自然に見せるためにかなり色々な手を入れています。
+ * 具体的には、
+ * 関数呼び出しの場合は無駄なexpressionを省いています。
+ * また、関数定義でsetup()やdraw()を定義する時も省いています。
+ * @param  {[type]} statement [description]
+ * @return {[type]}           [description]
+ */
 function expressionStatementBlock(statement) {
     if(statement.expression.type === 'CallExpression') return blockByExpression(statement.expression, true);
     var exprBlock = blockByExpression(statement.expression, true);
@@ -161,8 +169,8 @@ function functionDeclarationBlock(statement){
     const params = statement.params;
     if (name == 'setup') {
         block = createBlock('setup');
-        // let stmBlock = blockByStatement(statement.body);
-        // combineStatementBlock(block, stmBlock, 0);
+        let stmBlock = blockByStatement(statement.body);
+        combineStatementBlock(block, stmBlock, 0);
         return block;
     } else if (name == 'draw') {
         block = createBlock('draw');
@@ -215,7 +223,6 @@ function whileStatementBlock(statement) {
     return block;
 }
 
-//NOTE : 現在kind('var', 'const', 'let')は無視している
 function variableDeclarationBlock(statement) {
     var firstBlock = null;
     var block = null;
@@ -279,6 +286,8 @@ function blockByExpression(expression, isStatement) {
             return binaryExpressionBlock(expression);
         case 'CallExpression':
             return callExpressionBlock(expression, isStatement);
+        case 'FunctionExpression':
+            return functionExpressionBlock(expression);
         case 'Identifier':
             return identiferBlock(expression);
         case 'Literal':
@@ -320,8 +329,8 @@ function assignmentExpressionBlock(node) {
     var name = node.left.name;
     if (name == 'setup') {
         block = createBlock('setup');
-        // let stmBlock = blockByStatement(statement.body);
-        // combineStatementBlock(block, stmBlock, 0);
+        let stmBlock = blockByStatement(node.right.body);
+        combineStatementBlock(block, stmBlock, 0);
         return block;
     } else if (name == 'draw') {
         block = createBlock('draw');
@@ -366,31 +375,63 @@ function assignmentExpressionBlock(node) {
     }
 }
 
+/**
+ * ブロックの形を再考すべき。現状のままでは色々なプログラムに対応できない
+ * @param  {[type]}  node        [description]
+ * @param  {Boolean} isStatement 親がExpressionStatementだった場合はExpressionStatementブロックにかませずに文ブロックのまま返す
+ * @return {[type]}              [description]
+ */
 function callExpressionBlock(node, isStatement){
     var name = node.callee.name;
     var block;
-    if(name === "fill"){
-        name = "void_fill";
-        block = createBlock(name);
-    }else{
-        block = searchBlock(name, callFunctionNameList);
-    }
     if(!block){
-        if(isStatement){
-            block = createBlock('no_return_function');
-            block.getField('FUNCTION_NAME').setValue(name);
-            block.createValueInput(node.arguments.length);
+        if(node.callee.type === 'MemberExpression'){
+            var exprStmBlock = createBlock('expression_statement');
+            block = memberExpressionBlock(node.callee, true);
+            var functionBlock = block.getInputTargetBlock('member');
+            functionBlock.createValueInput(node.arguments.length);
+            for(argument of node.arguments){
+                var argBlock = blockByExpression(argument, false);
+                var index = getAkiIndex(functionBlock.inputList);
+                argBlock.outputConnection.connect(functionBlock.inputList[index].connection);
+            }
+            combineIntoBlock(exprStmBlock, block);
+            return exprStmBlock;
         }else{
-            block = createBlock('return_function');
-            block.getField('FUNCTION_NAME').setValue(name);
-            block.createValueInput(node.arguments.length);
+            if(isStatement){
+                block = createBlock('no_return_function');
+            }else{
+                block = createBlock('return_function');
+            }
         }
+        block.getField('FUNCTION_NAME').setValue(name);
+        block.createValueInput(node.arguments.length);
     }
     for (argument of node.arguments) {
         var argBlock = blockByExpression(argument, false);
         var index = getAkiIndex(block.inputList);
         argBlock.outputConnection.connect(block.inputList[index].connection);
     }
+    return block;
+}
+
+/**
+ * 現在a = function b(){}のような関数に名前付きのプログラムはブロックに変換できない。
+ * @param  {[type]} node [description]
+ * @return {[type]}      [description]
+ */
+function functionExpressionBlock(node){
+    const params = node.params;
+    if(node.id !== null) errorMessage('functionExpressionBlock()において名前付きの関数はブロックに正しく変換することができません。');
+    var block = createBlock('function_expression');
+    block.createValueInput(params.length);
+    let stmBlock = blockByStatement(node.body);
+    let i = 0;
+    for(param of params){
+        block.getField("PARAM" + i).setValue(param.name);
+        i++;
+    }
+    combineStatementBlock(block, stmBlock, 1);
     return block;
 }
 
@@ -472,10 +513,13 @@ function logicalExpressionBlock(node){
 /**
  * 現在は配列の要素指定のみ実現している。
  * x.func()やthis.xなどはまだ実装されていないので要実装
+ * functionが変数として扱われるJavaScriptにおいて、
+ * function呼び出し(CallExpression)のブロックが間違っているために
+ * 無理矢理な実装をしている。特にx.func1().func2()などはブロックに現状変換できない
  * @param  {JSON} expression
  * @return {Block}
  */
-function memberExpressionBlock(node){
+function memberExpressionBlock(node, isCallExpression){
     var block;
     if(node.computed){
         block = createBlock("array_member");
@@ -487,8 +531,13 @@ function memberExpressionBlock(node){
         block = blockByExpression(node.object, false);
         let rightBlock;
         if(node.property.type === "Identifier"){
-            rightBlock = createBlock("member_block");
-            rightBlock.getField("NAME").setValue(node.property.name);
+            if(!isCallExpression){
+                rightBlock = createBlock("member_block");
+                rightBlock.getField("NAME").setValue(node.property.name);
+            }else{
+                rightBlock = createBlock('return_function');
+                rightBlock.getField('FUNCTION_NAME').setValue(node.property.name);
+            }
         }else{
             rightBlock = blockByExpression(node.property, false);
         }

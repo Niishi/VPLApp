@@ -19,7 +19,7 @@ Blockly.p5js['return_function'] = function(block) {
         if(!tab) tab = ', ';
     }
     code += ')';
-    return [code, Blockly.p5js.ORDER_NONE];
+    return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
 Blockly.p5js['decl_function'] = function(block) {
@@ -35,4 +35,18 @@ Blockly.p5js['decl_function'] = function(block) {
     code += statements_statement;
     code += '}\n';
     return code;
+};
+
+Blockly.p5js['function_expression'] = function(block) {
+    var statements_body = Blockly.p5js.statementToCode(block, 'BODY');
+    var code = 'function( ';
+    let tab = '';
+    for(var i = 0; i < block.argLength; i++){
+        code += tab + block.getFieldValue('PARAM' + i);
+        if(!tab) tab = ', ';
+    }
+    code += '){\n';
+    code += statements_body;
+    code += '}';    //expressionなので末尾にセミコロンや改行文字は不要。それらはexpressionStatementブロックがやってくれる
+    return [code, Blockly.p5js.ORDER_ATOMIC];
 };

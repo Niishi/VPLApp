@@ -61,3 +61,16 @@ Blockly.Blocks['member_block'] = {
         this.setHelpUrl("");
     }
 };
+
+Blockly.Blocks['this_expression'] = {
+    init: function() {
+        this.appendValueInput("member")
+            .setCheck(null)
+            .appendField("this");
+        this.setInputsInline(false);
+        this.setOutput(true, null);
+        this.setColour(0);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
