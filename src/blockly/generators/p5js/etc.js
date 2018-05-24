@@ -77,3 +77,10 @@ Blockly.p5js['member_block'] = function(block) {
     if(value_member !== "") code += "." + value_member;
     return [code, Blockly.p5js.ORDER_ATOMIC];
 };
+
+Blockly.p5js['this_expression'] = function(block) {
+    var value_value = Blockly.p5js.valueToCode(block, 'VALUE', Blockly.p5js.ORDER_ATOMIC);
+    var code = 'this'
+    if(!value_value) code += '.' + value_value;
+    return [code, Blockly.p5js.ORDER_ATOMIC];
+};
