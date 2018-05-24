@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+// center point
 var centerX = 0.0, centerY = 0.0;
 
 var radius = 45, rotAngle = -90;
@@ -20,7 +20,7 @@ var frequency = [];
 // soft-body dynamics
 var organicConstant = 1.0;
 
-setup = function() {
+function setup() {
   createCanvas(710, 400);
 
   //center shape in window
@@ -35,7 +35,71 @@ setup = function() {
     nodeY[i] = 0;
     angle[i] = 0;
   }
-};
-=======
-b.a(1, 2);
->>>>>>> tekito
+
+  // iniitalize frequencies for corner nodes
+  for (var i=0; i<nodes; i++){
+    frequency[i] = random(5, 12);
+  }
+
+  noStroke();
+  frameRate(30);
+}
+
+function draw() {
+  //fade background
+  fill(0, 100);
+  rect(0,0,width, height);
+  drawShape();
+  moveShape();
+}
+
+function drawShape() {
+  //  calculate node  starting locations
+  for (var i=0; i<nodes; i++){
+    nodeStartX[i] = centerX+cos(radians(rotAngle))*radius;
+    nodeStartY[i] = centerY+sin(radians(rotAngle))*radius;
+    rotAngle += 360.0/nodes;
+  }
+
+  // draw polygon
+  curveTightness(organicConstant);
+  fill(255);
+  beginShape();
+  for (var i=0; i<nodes; i++){
+    curveVertex(nodeX[i], nodeY[i]);
+  }
+  for (var i=0; i<nodes-1; i++){
+    curveVertex(nodeX[i], nodeY[i]);
+  }
+  endShape(CLOSE);
+}
+
+function moveShape() {
+  //move center point
+  deltaX = mouseX-centerX;
+  deltaY = mouseY-centerY;
+
+  // create springing effect
+  deltaX *= springing;
+  deltaY *= springing;
+  accelX += deltaX;
+  accelY += deltaY;
+
+  // move predator's center
+  centerX += accelX;
+  centerY += accelY;
+
+  // slow down springing
+  accelX *= damping;
+  accelY *= damping;
+
+  // change curve tightness
+  organicConstant = 1-((abs(accelX)+abs(accelY))*0.1);
+
+  //move nodes
+  for (var i=0; i<nodes; i++){
+    nodeX[i] = nodeStartX[i]+sin(radians(angle[i]))*(accelX*2);
+    nodeY[i] = nodeStartY[i]+sin(radians(angle[i]))*(accelY*2);
+    angle[i] += frequency[i];
+  }
+}

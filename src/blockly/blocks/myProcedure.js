@@ -24,10 +24,6 @@ Blockly.Blocks['return_function'] = {
     init: function() {
         this.appendValueInput("NAME")
             .setCheck(null);
-        // this.appendDummyInput()
-        //     .appendField("(");
-        // this.appendDummyInput()
-        //     .appendField(")");
         this.setInputsInline(true);
         this.setOutput(true, null);
         this.setColour(300);

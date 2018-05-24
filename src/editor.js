@@ -32,6 +32,11 @@ function blockByCode(code){
     }
     return null;
 }
+
+var blockY = 0;
+var blockX = 100;
+var blockMargin = 30;
+
 function codeToBlock() {
     var editor = getAceEditor();
     var program = editor.getValue();
@@ -43,11 +48,21 @@ function codeToBlock() {
         return;
     }
 
+    let block = null;
     for (statement of ast.body) {
-        var block = blockByStatement(statement);
-        if(block === null) continue;
-        block.moveBy(blockX, blockY);
-        blockY += block.height + blockMargin;
+        var newBlock = blockByStatement(statement);
+        if(newBlock === null) continue;
+        if(block === null){
+            block = newBlock;
+            block.moveBy(blockX, blockY);
+        }else{
+            if(combineNextBlock(block, newBlock)){
+                blockY += block.height;
+            }else{
+                block.moveBy(blockX, blockY);
+                blockY += block.height + blockMargin;
+            }
+        }
     }
 
     blockY = 0;
@@ -59,9 +74,7 @@ function isExist(a) {
 var callFunctionNameList = ["fill","background","rect", "noStroke"];
 var functionNameList = ["setup", "draw"];
 
-var blockY = 0;
-var blockX = 100;
-var blockMargin = 30;
+
 
 
 function blockByStatement(statement) {
@@ -118,7 +131,7 @@ function blockStatementBlock(statement) {
  * @return {[type]}           [description]
  */
 function expressionStatementBlock(statement) {
-    if(statement.expression.type === 'CallExpression') return blockByExpression(statement.expression, true);
+    // if(statement.expression.type === 'CallExpression') return blockByExpression(statement.expression, true);
     var exprBlock = blockByExpression(statement.expression, true);
     if(exprBlock.type === 'setup' || exprBlock.type === 'draw') return exprBlock;
     var block = createBlock('expression_statement');
@@ -341,10 +354,8 @@ function assignmentExpressionBlock(node) {
         return block;
     } else {
         var block = createBlock("assingment_expression");
-        var name = node.left.name;
-        createVariable(name);
-        var variable = workspace.getVariable(name);
-        block.getField("NAME").setValue(variable.getId());
+        var leftBlock = blockByExpression(node.left, false);
+        combineIntoBlock(block, leftBlock);
         switch(node.operator){
             case '=':
                 block.getField('OP').setValue('EQ');
@@ -378,37 +389,16 @@ function assignmentExpressionBlock(node) {
 }
 
 /**
- * ブロックの形を再考すべき。現状のままでは色々なプログラムに対応できない
+ * 関数名を入れる場所が空いており、引数の数によって引数の入れる場所を設置する
  * @param  {[type]}  node        [description]
  * @param  {Boolean} isStatement 親がExpressionStatementだった場合はExpressionStatementブロックにかませずに文ブロックのまま返す
  * @return {[type]}              [description]
  */
 function callExpressionBlock(node, isStatement){
-    var name = node.callee.name;
-    var block;
-    if(!block){
-        if(node.callee.type === 'MemberExpression'){
-            var exprStmBlock = createBlock('expression_statement');
-            block = memberExpressionBlock(node.callee, true);
-            var functionBlock = block.getInputTargetBlock('member');
-            functionBlock.createValueInput(node.arguments.length);
-            for(argument of node.arguments){
-                var argBlock = blockByExpression(argument, false);
-                var index = getAkiIndex(functionBlock.inputList);
-                argBlock.outputConnection.connect(functionBlock.inputList[index].connection);
-            }
-            combineIntoBlock(exprStmBlock, block);
-            return exprStmBlock;
-        }else{
-            if(isStatement){
-                block = createBlock('no_return_function');
-            }else{
-                block = createBlock('return_function');
-            }
-        }
-        block.getField('FUNCTION_NAME').setValue(name);
-        block.createValueInput(node.arguments.length);
-    }
+    var block = createBlock('return_function');
+    var nameBlock = blockByExpression(node.callee, isStatement);
+    combineIntoBlock(block, nameBlock);
+    block.createValueInput(node.arguments.length);
     for (argument of node.arguments) {
         var argBlock = blockByExpression(argument, false);
         var index = getAkiIndex(block.inputList);
@@ -530,19 +520,10 @@ function memberExpressionBlock(node, isCallExpression){
         combineIntoBlock(block, nameBlock);
         combineIntoBlock(block, indexBlock);
     } else {
-        block = blockByExpression(node.object, false);
-        let rightBlock;
-        if(node.property.type === "Identifier"){
-            if(!isCallExpression){
-                rightBlock = createBlock("member_block");
-                rightBlock.getField("NAME").setValue(node.property.name);
-            }else{
-                rightBlock = createBlock('return_function');
-                rightBlock.getField('FUNCTION_NAME').setValue(node.property.name);
-            }
-        }else{
-            rightBlock = blockByExpression(node.property, false);
-        }
+        block = createBlock('member_block');
+        var leftBlock = blockByExpression(node.object, false);
+        var rightBlock = blockByExpression(node.property, false);
+        combineIntoBlock(block, leftBlock);
         combineIntoBlock(block, rightBlock);
     }
     return block;
@@ -600,7 +581,7 @@ function binaryExpressionBlock(node) {
 }
 
 function thisExpressionBlock(){
-    return createBlock('this')
+    return createBlock('this_expression');
 }
 
 function unaryExpressionBlock(node) {
@@ -684,12 +665,15 @@ function combineStatementBlock(parent, child, index) {
  * @param  {Blockly.BlockSvg} post 下のブロック
  */
 function combineNextBlock(pre, post) {
-    if(pre === null || post === null) return;
-    if(pre.nextConnection !== null){
+    if(pre === null || post === null) return false;
+    if(pre.nextConnection !== null && post.previousConnection !== null){
         post.previousConnection.connect(pre.nextConnection);
-    }else{
-        errorMessage("combineNextBlockにて接続できない" + pre + "\n"+ post);
+        return true;
     }
+    return false;
+    // else{
+    //     errorMessage("combineNextBlockにて接続できない" + pre + "\n"+ post);
+    // }
 }
 
 function getAkiIndex(inputList) {

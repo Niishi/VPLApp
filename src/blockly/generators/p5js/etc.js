@@ -36,7 +36,7 @@ Blockly.p5js['unary'] = function(block) {
 };
 
 Blockly.p5js['assingment_expression'] = function(block) {
-  var variable_name = Blockly.p5js.variableDB_.getName(block.getFieldValue('NAME'), Blockly.Variables.NAME_TYPE);
+  var variable_name = Blockly.p5js.valueToCode(block, 'LEFT', Blockly.p5js.ORDER_ATOMIC);
   var dropdown_op = block.getFieldValue('OP');
   switch(dropdown_op){
       case 'EQ':
@@ -70,23 +70,14 @@ Blockly.p5js['assingment_expression'] = function(block) {
 };
 
 Blockly.p5js['member_block'] = function(block) {
-    var text_name = block.getFieldValue('NAME');
-    var value_member = Blockly.p5js.valueToCode(block, 'member', Blockly.p5js.ORDER_ATOMIC);
-    var code = text_name;
-    if(!value_member) code += "." + value_member;
+    var value_left = Blockly.p5js.valueToCode(block, 'LEFT', Blockly.p5js.ORDER_ATOMIC);
+    var value_right = Blockly.p5js.valueToCode(block, 'RIGHT', Blockly.p5js.ORDER_ATOMIC);
+    var code = value_left + '.' + value_right;
     return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
 Blockly.p5js['this_expression'] = function(block) {
-<<<<<<< HEAD
-  var value_member = Blockly.p5js.valueToCode(block, 'member', Blockly.p5js.ORDER_ATOMIC);
-  var code = 'this';
-  if(!value_member) code += '.' + value_member;
-  return [code, Blockly.p5js.ORDER_ATOMIC];
-=======
     var value_value = Blockly.p5js.valueToCode(block, 'VALUE', Blockly.p5js.ORDER_ATOMIC);
-    var code = 'this'
-    if(!value_value) code += '.' + value_value;
+    var code = 'this';
     return [code, Blockly.p5js.ORDER_ATOMIC];
->>>>>>> tekito
 };

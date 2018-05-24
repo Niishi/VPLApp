@@ -38,9 +38,10 @@ Blockly.Blocks['constants'] = {
 
 Blockly.Blocks['assingment_expression'] = {
     init: function() {
+        this.appendValueInput("LEFT")
+            .setCheck(null);
         this.appendValueInput("VAL")
             .setCheck(null)
-            .appendField(new Blockly.FieldVariable("item"), "NAME")
             .appendField(new Blockly.FieldDropdown([["=","EQ"], ["+=","ADD"], ["-=","SUB"], ["*=","MULT"], ["/=","DIVISION"], ["%=","AMARI"], ["**=","BEKI"]]), "OP");
         this.setInputsInline(true);
         this.setOutput(true, null);
@@ -52,37 +53,27 @@ Blockly.Blocks['assingment_expression'] = {
 
 Blockly.Blocks['member_block'] = {
     init: function() {
-        this.appendValueInput("member")
+        this.appendValueInput("LEFT")
+            .setCheck(null);
+        this.appendValueInput("RIGHT")
             .setCheck(null)
-            .appendField(new Blockly.FieldTextInput("default"), "NAME");
+            .appendField(".");
+        this.setInputsInline(true);
         this.setOutput(true, null);
-        this.setColour(120);
+        this.setColour(270);
         this.setTooltip("");
         this.setHelpUrl("");
     }
 };
 
 Blockly.Blocks['this_expression'] = {
-<<<<<<< HEAD
     init: function() {
-        this.appendValueInput("member")
-            .setCheck(null)
+        this.appendDummyInput()
             .appendField("this");
         this.setInputsInline(false);
-        this.setOutput(true, null);
+        this.setOutput(true,null);
         this.setColour(0);
         this.setTooltip("");
         this.setHelpUrl("");
     }
-=======
-  init: function() {
-    this.appendValueInput("VALUE")
-        .setCheck(null)
-        .appendField("this");
-    this.setOutput(true, null);
-    this.setColour(0);
- this.setTooltip("");
- this.setHelpUrl("");
-  }
->>>>>>> tekito
 };

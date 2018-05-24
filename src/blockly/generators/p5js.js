@@ -154,14 +154,14 @@ Blockly.p5js.init = function(workspace) {
 
   var defvars = [];
   var variables = workspace.getAllVariables();
-  if (variables.length) {
-    for (var i = 0; i < variables.length; i++) {
-      defvars[i] = Blockly.p5js.variableDB_.getName(variables[i].name,
-          Blockly.Variables.NAME_TYPE);
-    }
-    Blockly.p5js.definitions_['variables'] =
-        'var ' + defvars.join(', ') + ';';
-  }
+  // if (variables.length) {
+  //   for (var i = 0; i < variables.length; i++) {
+  //     defvars[i] = Blockly.p5js.variableDB_.getName(variables[i].name,
+  //         Blockly.Variables.NAME_TYPE);
+  //   }
+  //   Blockly.p5js.definitions_['variables'] =
+  //       'var ' + defvars.join(', ') + ';';
+  // }
 };
 
 /**
