@@ -296,6 +296,8 @@ function blockByExpression(expression, isStatement) {
             return logicalExpressionBlock(expression);
         case 'MemberExpression':
             return memberExpressionBlock(expression);
+        case 'ThisExpression':
+            return thisExpressionBlock(expression);
         case 'UnaryExpression':
             return unaryExpressionBlock(expression);
         case 'UpdateExpression':
@@ -595,6 +597,10 @@ function binaryExpressionBlock(node) {
     combineIntoBlock(block, leftBlock);
     combineIntoBlock(block, rightBlock);
     return block;
+}
+
+function thisExpressionBlock(){
+    return createBlock('this')
 }
 
 function unaryExpressionBlock(node) {

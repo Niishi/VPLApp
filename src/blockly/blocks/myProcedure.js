@@ -22,8 +22,12 @@ Blockly.Blocks['no_return_function'] = {
 
 Blockly.Blocks['return_function'] = {
     init: function() {
-        this.appendDummyInput()
-            .appendField(new Blockly.FieldTextInput("functionName"), "FUNCTION_NAME");
+        this.appendValueInput("NAME")
+            .setCheck(null);
+        // this.appendDummyInput()
+        //     .appendField("(");
+        // this.appendDummyInput()
+        //     .appendField(")");
         this.setInputsInline(true);
         this.setOutput(true, null);
         this.setColour(300);

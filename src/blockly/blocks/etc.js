@@ -63,6 +63,7 @@ Blockly.Blocks['member_block'] = {
 };
 
 Blockly.Blocks['this_expression'] = {
+<<<<<<< HEAD
     init: function() {
         this.appendValueInput("member")
             .setCheck(null)
@@ -73,4 +74,15 @@ Blockly.Blocks['this_expression'] = {
         this.setTooltip("");
         this.setHelpUrl("");
     }
+=======
+  init: function() {
+    this.appendValueInput("VALUE")
+        .setCheck(null)
+        .appendField("this");
+    this.setOutput(true, null);
+    this.setColour(0);
+ this.setTooltip("");
+ this.setHelpUrl("");
+  }
+>>>>>>> tekito
 };

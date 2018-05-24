@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 var centerX = 0.0, centerY = 0.0;
 
 var radius = 45, rotAngle = -90;
@@ -35,3 +36,6 @@ setup = function() {
     angle[i] = 0;
   }
 };
+=======
+b.a(1, 2);
+>>>>>>> tekito
