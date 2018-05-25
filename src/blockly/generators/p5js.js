@@ -172,9 +172,9 @@ Blockly.p5js.init = function(workspace) {
 Blockly.p5js.finish = function(code) {
   // Convert the definitions dictionary into a list.
   var definitions = [];
-  for (var name in Blockly.p5js.definitions_) {
-    definitions.push(Blockly.p5js.definitions_[name]);
-  }
+  // for (var name in Blockly.p5js.definitions_) {
+  //   definitions.push(Blockly.p5js.definitions_[name]);
+  // }
   // Clean up temporary data.
   delete Blockly.p5js.definitions_;
   delete Blockly.p5js.functionNames_;

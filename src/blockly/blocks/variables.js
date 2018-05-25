@@ -28,6 +28,7 @@
  */
 'use strict';
 
+goog.provide('Blockly');    //自分が記入したコード
 goog.provide('Blockly.Blocks.variables');  // Deprecated.
 goog.provide('Blockly.Constants.Variables');
 
