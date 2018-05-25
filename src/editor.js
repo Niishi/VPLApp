@@ -52,16 +52,19 @@ function codeToBlock() {
     for (statement of ast.body) {
         var newBlock = blockByStatement(statement);
         if(newBlock === null) continue;
+        alert(blockY);
         if(block === null){
             block = newBlock;
             block.moveBy(blockX, blockY);
+            blockY += block.height;
         }else{
             if(combineNextBlock(block, newBlock)){
                 blockY += block.height;
             }else{
-                block.moveBy(blockX, blockY);
+                newBlock.moveBy(blockX, blockY);
                 blockY += block.height + blockMargin;
             }
+            block = newBlock;
         }
     }
 
@@ -89,6 +92,8 @@ function blockByStatement(statement) {
             return functionDeclarationBlock(statement);
         case 'IfStatement':
             return ifStatementBlock(statement);
+        case 'ReturnStatement':
+            return returnStatementBlock(statement);
         case 'WhileStatement':
             return whileStatementBlock(statement);
         case 'VariableDeclaration':
@@ -227,6 +232,15 @@ function ifStatementBlock(statement){
     return block;
 }
 
+function returnStatementBlock(statement){
+    var block = createBlock('return_statement');
+    if(statement.argument){
+        var valueBlock = blockByExpression(statement.argument, false);
+        combineIntoBlock(block, valueBlock);
+    }
+    return block;
+}
+
 function whileStatementBlock(statement) {
     var block = createBlock('controls_whileUntil');
     var condBlock = blockByExpression(statement.test, false);
@@ -298,6 +312,7 @@ function blockByExpression(expression, isStatement) {
         case 'BinaryExpression':
             return binaryExpressionBlock(expression);
         case 'CallExpression':
+        case 'NewExpression':
             return callExpressionBlock(expression, isStatement);
         case 'FunctionExpression':
             return functionExpressionBlock(expression);
@@ -395,7 +410,9 @@ function assignmentExpressionBlock(node) {
  * @return {[type]}              [description]
  */
 function callExpressionBlock(node, isStatement){
-    var block = createBlock('return_function');
+    var block
+    if(node.type === 'CallExpression')block = createBlock('return_function');
+    else if(node.type === 'NewExpression') block = createBlock('new_expression');
     var nameBlock = blockByExpression(node.callee, isStatement);
     combineIntoBlock(block, nameBlock);
     block.createValueInput(node.arguments.length);

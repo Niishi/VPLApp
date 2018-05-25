@@ -81,3 +81,9 @@ Blockly.p5js['this_expression'] = function(block) {
     var code = 'this';
     return [code, Blockly.p5js.ORDER_ATOMIC];
 };
+
+Blockly.p5js['return_statement'] = function(block) {
+    var value_value = Blockly.p5js.valueToCode(block, 'VALUE', Blockly.p5js.ORDER_ATOMIC);
+    var code = 'return ' + value_value + ';\n';
+    return code;
+};

@@ -41,6 +41,28 @@ Blockly.Blocks['return_function'] = {
     }
 };
 
+Blockly.Blocks['new_expression'] = {
+    init: function() {
+        this.appendValueInput("NAME")
+            .setCheck(null)
+            .appendField("return");
+        this.setInputsInline(true);
+        this.setOutput(true, null);
+        this.setColour(45);
+        this.setTooltip("");
+        this.setHelpUrl("");
+        this.argLength = 0;
+    },
+    createValueInput: function(count) {
+        for(var i = 0; i < count; i++){
+            var input = this.appendValueInput('ARG' + i)
+                .setAlign(Blockly.ALIGN_RIGHT);
+            input.init();
+            this.argLength++;
+        }
+    }
+};
+
 Blockly.Blocks['decl_function'] = {
     init: function() {
         this.appendDummyInput('TOP')

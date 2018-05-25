@@ -1,72 +1,53 @@
+var system;
+
 setup = function(){
-  createCanvas(710, 400);
-  rectMode(CORNERS);
-  noStroke();
-  left = ((width) / 2 - 100);
-  right = ((width) / 2 + 100);
+  createCanvas(720, 400);
+  system = (new ParticleSystem(createVector(((width) / 2), 50)));
 }
 
 draw = function(){
-  background(102);
-  updateSpring();
-  drawSpring();
+  background(51);
+  system.addParticle();
+  system.run();
 }
 
-function drawSpring(){
-  fill(0.2);
-  var baseWidth = (0.5 * ps + -8);
-  rect(((width) / 2 - baseWidth), (ps + springHeight), ((width) / 2 + baseWidth), (height));
-  if (over || move) {
-    fill(255);
-  } else {
-    fill(204);
+var Particle = function( position){
+  this.acceleration = createVector(0, 0.05);
+  this.velocity = createVector(random(-1, 1), random(-1, 0));
+  this.position = position.copy();
+  this.lifespan = 255;
+};
+Particle.prototype.run = function( ){
+  this.update();
+  this.display();
+};
+Particle.prototype.update = function( ){
+  this.velocity.add(this.acceleration);
+  this.position.add(this.velocity);
+  this.lifespan -= 2;
+};
+Particle.prototype.display = function( ){
+  stroke(200, this.lifespan);
+  strokeWeight(2);
+  fill(127, this.lifespan);
+  ellipse(this.position.x, this.position.y, 12, 12);
+};
+Particle.prototype.isDead = function( ){
+  return (this.lifespan < 0);
+};
+var ParticleSystem = function( position){
+  this.origin = position.copy();
+  this.particles = [];
+};
+ParticleSystem.prototype.addParticle = function( ){
+  this.particles.push((new Particle(this.origin)));
+};
+ParticleSystem.prototype.run = function( ){
+  for (var i = (this.particles.length - 1); (i >= 0); (i--) ) {
+    var p = this.particles[i];
+    p.run();
+    if (p.isDead()) {
+      this.particles.splice(i, 1);
+    }
   }
-  rect(left, ps, right, (ps + springHeight));
-}
-
-function updateSpring(){
-  if (!move) {
-    f = (-K * (ps - R));
-    as = (f / M);
-    vs = (D * (vs + as));
-    ps = (ps + vs);
-  }
-  if (abs(vs) < 0.1) {
-    vs = 0;
-  }
-  if (mouseX > left && mouseX < right && mouseY > ps && mouseY < ps + springHeight) {
-    over = true;
-  } else {
-    over = false;
-  }
-  if (move) {
-    ps = (mouseY - springHeight / 2);
-    ps = constrain(ps, minHeight, maxHeight);
-  }
-}
-
-function mousePressed(){
-  if (over) {
-    move = true;
-  }
-}
-
-function mouseReleased(){
-  move = false;
-}
-
-var springHeight = 32;
-var ps = R;
-var vs = 0;
-var as = 0;
-var f = 0;
-var M = 0.8;
-var K = 0.2;
-var D = 0.92;
-var R = 150;
-var left;
-var right;
-var maxHeight = 200;
-var minHeight = 100;
-var over = false;
-var move = false;
+};

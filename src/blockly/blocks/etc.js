@@ -77,3 +77,17 @@ Blockly.Blocks['this_expression'] = {
         this.setHelpUrl("");
     }
 };
+
+Blockly.Blocks['return_statement'] = {
+    init: function() {
+        this.appendValueInput("VALUE")
+            .setCheck(null)
+            .appendField("return");
+        this.setInputsInline(true);
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(0);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
