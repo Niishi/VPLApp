@@ -52,7 +52,6 @@ function codeToBlock() {
     for (statement of ast.body) {
         var newBlock = blockByStatement(statement);
         if(newBlock === null) continue;
-        alert(blockY);
         if(block === null){
             block = newBlock;
             block.moveBy(blockX, blockY);
@@ -496,7 +495,8 @@ function literalBlock(node) {
 
         block.inputList[0].fieldRow[0].setValue(node.value);
         return block;
-    }else{
+    }
+    else{
         errorMessage("literalBlockでエラー。該当しないLiteral=>" + node.value);
         return null;
     }
@@ -545,7 +545,7 @@ function memberExpressionBlock(node, isCallExpression){
     }
     return block;
 }
-
+//TODO: '==='と'!==の実装'
 function binaryExpressionBlock(node) {
     var block = null;
     switch(node.operator) {
@@ -566,10 +566,12 @@ function binaryExpressionBlock(node) {
             block.getField("OP").setValue("DIVIDE");
             break;
         case '==':
+        case '===':
             block = createBlock("logic_compare", node.type);
             block.getField("OP").setValue("EQ");
             break;
         case '!=':
+        case '!==':
             block = createBlock("logic_compare", node.type);
             block.getField("OP").setValue("NEQ");
             break;
