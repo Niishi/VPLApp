@@ -74,10 +74,8 @@ function isExist(a) {
 }
 
 var callFunctionNameList = ["fill","background","rect", "noStroke"];
-var functionNameList = ["setup", "draw"];
-
-
-
+var functionNameList = ["setup", "draw", 'mousePressed', 'mouseDragged',
+                        'mouseClicked', 'mouseReleased'];
 
 function blockByStatement(statement) {
     switch(statement.type){
@@ -99,6 +97,9 @@ function blockByStatement(statement) {
             return variableDeclarationBlock(statement);
         case 'VariableDeclarator':
             return variableDeclaratorBlock(statement);
+        case 'EmptyStatement':
+            console.log('EmptyStatementがありました');
+            return null;
         default:
             errorMessage("blockByStatementでエラー。存在しないstatement=>" + statement.type);
     }
@@ -137,7 +138,7 @@ function blockStatementBlock(statement) {
 function expressionStatementBlock(statement) {
     // if(statement.expression.type === 'CallExpression') return blockByExpression(statement.expression, true);
     var exprBlock = blockByExpression(statement.expression, true);
-    if(exprBlock.type === 'setup' || exprBlock.type === 'draw') return exprBlock;
+    if(functionNameList.indexOf(exprBlock.type) !== -1) return exprBlock;
     var block = createBlock('expression_statement');
     combineIntoBlock(block,exprBlock);
     return block;
@@ -184,13 +185,8 @@ function forStatementBlock(statement) {
 function functionDeclarationBlock(statement){
     const name = statement.id.name;
     const params = statement.params;
-    if (name == 'setup') {
-        block = createBlock('setup');
-        let stmBlock = blockByStatement(statement.body);
-        combineStatementBlock(block, stmBlock, 0);
-        return block;
-    } else if (name == 'draw') {
-        block = createBlock('draw');
+    if(functionNameList.indexOf(name) !== -1){
+        let block = createBlock(name);
         let stmBlock = blockByStatement(statement.body);
         combineStatementBlock(block, stmBlock, 0);
         return block;
@@ -356,15 +352,11 @@ function arrayExpressionBlock(node){
 function assignmentExpressionBlock(node) {
     var block;
     var name = node.left.name;
-    if (name == 'setup') {
-        block = createBlock('setup');
+    if(functionNameList.indexOf(name) !== -1){
+        let block = createBlock(name);
         let stmBlock = blockByStatement(node.right.body);
-        combineStatementBlock(block, stmBlock, 0);
-        return block;
-    } else if (name == 'draw') {
-        block = createBlock('draw');
-        let stmBlock = blockByStatement(node.right.body);
-        combineStatementBlock(block, stmBlock, 0);
+        if(name === 'setup' || name === 'draw')combineStatementBlock(block, stmBlock, 0);
+        else combineStatementBlock(block, stmBlock, 1);
         return block;
     } else {
         var block = createBlock("assingment_expression");
@@ -472,9 +464,8 @@ function identiferBlock(node) {
 }
 
 function literalBlock(node) {
-    let block;
     if(node.raw === "true" || node.raw === "false"){
-        block = new Blockly.BlockSvg(workspace, "logic_boolean");
+        var block = new Blockly.BlockSvg(workspace, "logic_boolean");
         block.initSvg();
         block.render();
         if(node.raw === "true"){
@@ -484,34 +475,26 @@ function literalBlock(node) {
         }
         return block;
     }else if(isColor(node.value)){
-        block = new Blockly.BlockSvg(workspace, "colour_picker");
+        var block = new Blockly.BlockSvg(workspace, "colour_picker");
         block.initSvg();
         block.render();
         block.inputList[0].fieldRow[0].setValue(node.value);
         return block;
     }else if(isNumber(node.value)){
-        block = new Blockly.BlockSvg(workspace, "math_number");
-
+        var block = new Blockly.BlockSvg(workspace, "math_number");
         block.initSvg();
         block.render();
 
         block.inputList[0].fieldRow[0].setValue(node.value);
         return block;
-<<<<<<< HEAD
+    }else if(isString(node.value)){
+        var block = createBlock('text');
+        block.getField('TEXT').setValue(node.value);
+        return block;
     }
     else{
         errorMessage("literalBlockでエラー。該当しないLiteral=>" + node.value);
         return null;
-=======
-    } else if(isString(node.value)){
-        block = createBlock('text');
-        block.getField('TEXT').setValue(node.value);
-        return block;
-    }
-     else {
-         errorMessage("literalBlockでエラー。該当しないLiteral=>" + node.value);
-         return null;
->>>>>>> 2385475608f8b1e47703d44f9713e5f1d9639bbf
     }
 }
 
@@ -746,13 +729,12 @@ function isColor (color) {
     return color.match(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/) !== null;
 }
 
-function isNumber(obj) {
-    return typeof (obj) == "number" || obj instanceof Number;
-};
-
-function isString(obj) {
-    return typeof (obj) == "string" || obj instanceof String;
-};
+function isNumber(obj){
+    return typeof(obj) === 'number' || obj instanceof Number;
+}
+function isString(obj){
+    return typeof(obj) == 'string' || obj instanceof String;
+}
 
 /**
  * 指定されたnameから対応するブロックを生成する

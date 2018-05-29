@@ -77,14 +77,7 @@ var Pjs;
 var flag = false;
 function run() {
     saveCode();
-    // runCode();
     var codeText = getAceEditor().getValue();
-    // try{
-    //     var s = new Function("p", codeText);
-    //     Pjs = new p5(s,"sketch");
-    // }catch(e){
-    //     // alert(e);
-    // }
     eval(codeText);
 }
 
