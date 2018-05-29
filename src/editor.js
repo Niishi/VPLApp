@@ -472,8 +472,9 @@ function identiferBlock(node) {
 }
 
 function literalBlock(node) {
+    let block;
     if(node.raw === "true" || node.raw === "false"){
-        var block = new Blockly.BlockSvg(workspace, "logic_boolean");
+        block = new Blockly.BlockSvg(workspace, "logic_boolean");
         block.initSvg();
         block.render();
         if(node.raw === "true"){
@@ -483,22 +484,34 @@ function literalBlock(node) {
         }
         return block;
     }else if(isColor(node.value)){
-        var block = new Blockly.BlockSvg(workspace, "colour_picker");
+        block = new Blockly.BlockSvg(workspace, "colour_picker");
         block.initSvg();
         block.render();
         block.inputList[0].fieldRow[0].setValue(node.value);
         return block;
-    }else if(!isNaN(node.value)){
-        var block = new Blockly.BlockSvg(workspace, "math_number");
+    }else if(isNumber(node.value)){
+        block = new Blockly.BlockSvg(workspace, "math_number");
+
         block.initSvg();
         block.render();
 
         block.inputList[0].fieldRow[0].setValue(node.value);
         return block;
+<<<<<<< HEAD
     }
     else{
         errorMessage("literalBlockでエラー。該当しないLiteral=>" + node.value);
         return null;
+=======
+    } else if(isString(node.value)){
+        block = createBlock('text');
+        block.getField('TEXT').setValue(node.value);
+        return block;
+    }
+     else {
+         errorMessage("literalBlockでエラー。該当しないLiteral=>" + node.value);
+         return null;
+>>>>>>> 2385475608f8b1e47703d44f9713e5f1d9639bbf
     }
 }
 
@@ -732,6 +745,15 @@ function isColor (color) {
     if(!isNaN(color)) return false;
     return color.match(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/) !== null;
 }
+
+function isNumber(obj) {
+    return typeof (obj) == "number" || obj instanceof Number;
+};
+
+function isString(obj) {
+    return typeof (obj) == "string" || obj instanceof String;
+};
+
 /**
  * 指定されたnameから対応するブロックを生成する
  * @param  {String} name ブロック名
