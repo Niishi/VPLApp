@@ -37,7 +37,62 @@ Blockly.Blocks['for_decl'] = {
         this.setInputsInline(true);
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
-        this.setColour(230);
+        this.setColour(120);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
+
+Blockly.Blocks['for_in'] = {
+    init: function() {
+        this.appendValueInput("LEFT")
+            .setCheck(null)
+            .appendField("for");
+        this.appendValueInput("RIGHT")
+            .setCheck(null)
+            .appendField("in");
+        this.appendStatementInput("BODY")
+            .setCheck(null);
+        this.setInputsInline(true);
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(120);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
+
+Blockly.Blocks['for_of'] = {
+    init: function() {
+        this.appendValueInput("LEFT")
+            .setCheck(null)
+            .appendField("for");
+        this.appendValueInput("RIGHT")
+            .setCheck(null)
+            .appendField("of");
+        this.appendStatementInput("BODY")
+            .setCheck(null);
+        this.setInputsInline(true);
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(120);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
+
+Blockly.Blocks['do_while'] = {
+    init: function() {
+        this.appendStatementInput("BODY")
+            .setCheck(null)
+            .appendField("do");
+        this.appendValueInput("TEST")
+            .setCheck(null)
+            .appendField("whlile");
+        this.setInputsInline(true);
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(120);
         this.setTooltip("");
         this.setHelpUrl("");
     }

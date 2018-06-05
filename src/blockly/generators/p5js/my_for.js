@@ -22,3 +22,31 @@ Blockly.p5js['for_decl'] = function(block) {
         statements_stm + '}\n';
     return code;
 };
+
+Blockly.p5js['for_in'] = function(block) {
+    var value_left = Blockly.p5js.valueToCode(block, 'LEFT', Blockly.p5js.ORDER_ATOMIC);
+    var value_right = Blockly.p5js.valueToCode(block, 'RIGHT', Blockly.p5js.ORDER_ATOMIC);
+    var statements_body = Blockly.p5js.statementToCode(block, 'BODY');
+    var code = 'for(' + value_left + ' in ' + value_right + '){\n';
+    code += statements_body + "}\n";
+    return code;
+};
+
+Blockly.p5js['for_of'] = function(block) {
+    var value_left = Blockly.p5js.valueToCode(block, 'LEFT', Blockly.p5js.ORDER_ATOMIC);
+    var value_right = Blockly.p5js.valueToCode(block, 'RIGHT', Blockly.p5js.ORDER_ATOMIC);
+    var statements_body = Blockly.p5js.statementToCode(block, 'BODY');
+    var code = 'for(' + value_left + ' of ' + value_right + '){\n';
+    code += statements_body + "}\n";
+    return code;
+};
+
+Blockly.p5js['do_while'] = function(block) {
+    var statements_body = Blockly.p5js.statementToCode(block, 'BODY');
+    var value_test = Blockly.p5js.valueToCode(block, 'TEST', Blockly.p5js.ORDER_ATOMIC);
+    var code = 'do{\n';
+    code += statements_body;
+    if(value_test) code += '}while(' + value_test + ');\n';
+    else code += '}while(false);\n';
+    return code;
+};

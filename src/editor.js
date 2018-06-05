@@ -81,10 +81,20 @@ function blockByStatement(statement) {
     switch(statement.type){
         case 'BlockStatement':
             return blockStatementBlock(statement);
+        case 'BreakStatement':
+            return breakStatementBlock(statement);
+        case 'ContinueStatement':
+            return continueStatementBlock(statement);
+        case 'DoWhileStatement':
+            return doWhileStatementBlock(statement);
         case 'ExpressionStatement':
             return expressionStatementBlock(statement);
         case 'ForStatement':
             return forStatementBlock(statement);
+        case 'ForInStatement':
+            return forInStatementBlock(statement);
+        case 'ForOfStatement':
+            return forOfStatementBlock(statement);
         case 'FunctionDeclaration':
             return functionDeclarationBlock(statement);
         case 'IfStatement':
@@ -125,6 +135,49 @@ function blockStatementBlock(statement) {
         }
     }
     return firstBlock;
+}
+
+/**
+ * labelにも対応したブロックを生成し返す
+ * @param  {[type]} statement [description]
+ * @return {[type]}           [description]
+ */
+function breakStatementBlock(statement){
+    let block = createBlock('break_statement');
+    if(statement.label){
+        let identiferBlock = blockByExpression(statement.label, false);
+        combineIntoBlock(block, identiferBlock);
+    }
+    return block;
+}
+
+/**
+ * labelにも対応したブロックを生成し返す
+ * @param  {[type]} statement [description]
+ * @return {[type]}           [description]
+ */
+function continueStatementBlock(statement){
+    let block = createBlock('continue_statement');
+    if(statement.label){
+        let identiferBlock = blockByExpression(statement.label, false);
+        combineIntoBlock(block, identiferBlock);
+    }
+    return block;
+}
+
+/**
+ * do-whileブロックを生成し返す
+ * @param  {[type]} statement [description]
+ * @return {[type]}           [description]
+ */
+function doWhileStatementBlock(statement){
+    let block       = createBlock('do_while');
+    let stmBlock    = blockByStatement(statement.body);
+    let testBlock   = blockByExpression(statement.test, false);
+    combineStatementBlock(block, stmBlock, 0);
+    combineIntoBlock(block, testBlock);
+
+    return block;
 }
 
 /**
@@ -173,6 +226,30 @@ function forStatementBlock(statement) {
     combineIntoBlock(block, testBlock);
     combineIntoBlock(block, updateBlock);
     combineStatementBlock(block, stmBlock, 3);
+
+    return block;
+}
+
+function forInStatementBlock(statement){
+    let block       = createBlock('for_in');
+    let leftBlock   = blockByExpression(statement.left, false);
+    let rightBlock  = blockByExpression(statement.right, false);
+    let stmBlock    = blockByStatement(statement. body);
+    combineIntoBlock(block, leftBlock);
+    combineIntoBlock(block, rightBlock);
+    combineStatementBlock(block, stmBlock, 2);
+
+    return block;
+}
+
+function forOfStatementBlock(statement){
+    let block       = createBlock('for_of');
+    let leftBlock   = blockByExpression(statement.left, false);
+    let rightBlock  = blockByExpression(statement.right, false);
+    let stmBlock    = blockByStatement(statement. body);
+    combineIntoBlock(block, leftBlock);
+    combineIntoBlock(block, rightBlock);
+    combineStatementBlock(block, stmBlock, 2);
 
     return block;
 }

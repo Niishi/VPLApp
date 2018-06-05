@@ -91,3 +91,31 @@ Blockly.Blocks['return_statement'] = {
         this.setHelpUrl("");
     }
 };
+
+Blockly.Blocks['break_statement'] = {
+    init: function() {
+        this.appendValueInput("NAME")
+            .setCheck(null)
+            .appendField("break");
+        this.setInputsInline(false);
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(0);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
+
+Blockly.Blocks['continue_statement'] = {
+    init: function() {
+        this.appendValueInput("NAME")
+            .setCheck(null)
+            .appendField("continue");
+        this.setInputsInline(false);
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(0);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};

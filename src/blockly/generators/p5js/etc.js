@@ -87,3 +87,17 @@ Blockly.p5js['return_statement'] = function(block) {
     var code = 'return ' + value_value + ';\n';
     return code;
 };
+
+Blockly.p5js['break_statement'] = function(block) {
+    var value_name = Blockly.p5js.valueToCode(block, 'NAME', Blockly.p5js.ORDER_ATOMIC);
+    var code = 'break;\n';
+    if(value_name) code = value_name + " : " + code;
+    return code;
+};
+
+Blockly.p5js['continue_statement'] = function(block) {
+    var value_name = Blockly.p5js.valueToCode(block, 'NAME', Blockly.p5js.ORDER_ATOMIC);
+    var code = 'continue;\n';
+    if(value_name) code = value_name + " : " + code;
+    return code;
+};
