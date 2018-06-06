@@ -23,9 +23,8 @@ Blockly.Blocks['draw'] = {
 
 Blockly.Blocks['mousePressed'] = {
   init: function() {
-    this.appendDummyInput()
-        .appendField("mousePressed");
     this.appendStatementInput("NAME")
+    .appendField("mousePressed")
         .setCheck(null);
     this.setColour(0);
  this.setTooltip("");
@@ -35,9 +34,8 @@ Blockly.Blocks['mousePressed'] = {
 
 Blockly.Blocks['mouseDragged'] = {
   init: function() {
-    this.appendDummyInput()
-        .appendField("mouseDragged");
     this.appendStatementInput("NAME")
+    .appendField("mouseDragged")
         .setCheck(null);
     this.setColour(0);
  this.setTooltip("");
@@ -47,9 +45,8 @@ Blockly.Blocks['mouseDragged'] = {
 
 Blockly.Blocks['mouseReleased'] = {
   init: function() {
-    this.appendDummyInput()
-        .appendField("mouseReleased");
     this.appendStatementInput("NAME")
+    .appendField("mouseReleased")
         .setCheck(null);
     this.setColour(0);
  this.setTooltip("");
@@ -59,9 +56,8 @@ Blockly.Blocks['mouseReleased'] = {
 
 Blockly.Blocks['mouseClicked'] = {
   init: function() {
-    this.appendDummyInput()
-        .appendField("mouseClicked");
     this.appendStatementInput("NAME")
+    .appendField("mouseClicked")
         .setCheck(null);
     this.setColour(0);
  this.setTooltip("");

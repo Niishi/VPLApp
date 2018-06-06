@@ -85,6 +85,10 @@ function blockByStatement(statement) {
             return breakStatementBlock(statement);
         case 'ContinueStatement':
             return continueStatementBlock(statement);
+        case 'ClassDeclaration':
+            return classDeclarationBlock(statement);
+        case 'ClassBody':
+            return classBodyBlock(statement);
         case 'DoWhileStatement':
             return doWhileStatementBlock(statement);
         case 'ExpressionStatement':
@@ -99,6 +103,8 @@ function blockByStatement(statement) {
             return functionDeclarationBlock(statement);
         case 'IfStatement':
             return ifStatementBlock(statement);
+        case 'MethodDefinition':
+            return methodDefinitionBlock(statement);
         case 'ReturnStatement':
             return returnStatementBlock(statement);
         case 'WhileStatement':
@@ -165,6 +171,84 @@ function continueStatementBlock(statement){
     return block;
 }
 
+function classDeclarationBlock(statement){
+    let block = createBlock('class_decl');
+    if(statement.id){
+        let nameBlock = blockByExpression(statement.id, false);
+        combineIntoBlock(block, nameBlock, 0);
+    }
+    if(statement.superClass){
+        let superBlock = blockByExpression(statement.superClass, false);
+        combineIntoBlock(block, superBlock, 1);
+    }
+    let stmBlock = blockByStatement(statement.body);
+    combineStatementBlock(block, stmBlock, 2);
+    return block;
+}
+
+function classBodyBlock(statement){
+    var firstBlock = null;
+    var block = null;
+    for(stm of statement.body){
+        if(block === null){
+            firstBlock = blockByStatement(stm);
+            block = firstBlock;
+        }else{
+            var nextBlock = blockByStatement(stm);
+            if(nextBlock !== null){
+                combineNextBlock(block, nextBlock);
+                block = nextBlock;
+            }
+        }
+    }
+    return firstBlock;
+}
+/**
+ * computedがtrueの場合は考慮していません。
+ * @param  {[type]} statement [description]
+ * @return {[type]}           [description]
+ */
+function methodDefinitionBlock(statement){
+    if(statement.computed){
+        errorMessage('methodDefinitionBlockにおいて' +
+                     'computedがtrueの場合を考慮していません');
+    }
+    switch(statement.kind){
+        case 'method':
+            var block = createBlock('method');
+            if(statement.key){
+                let nameBlock = blockByExpression(statement.key, false);
+                combineIntoBlock(block, nameBlock);
+            }
+            var functionExpression = statement.value;
+            block.createValueInput(functionExpression.params.length);
+            let i = 0;
+            for(param of functionExpression.params){
+                block.getField("PARAM" + i).setValue(param.name);
+                i++;
+            }
+            var stmBlock = blockByStatement(functionExpression.body);
+            combineStatementBlock(block, stmBlock, 2);
+            if(statement.static) block.getField('NAME').setValue(true);
+            return block;
+        case 'constructor':
+            var block = createBlock('constructor');
+            var functionExpression = statement.value;
+            block.createValueInput(functionExpression.params.length);
+            var i = 0;
+            for(param of functionExpression.params){
+                block.getField("PARAM" + i).setValue(param.name);
+                i++;
+            }
+            // var stmBlock = blockByStatement(functionExpression.body);
+            // combineStatementBlock(block, stmBlock, 1);
+            return block;
+        case 'set':
+        case 'kind':
+            errorMessage('set, kindに対応していません');
+    }
+}
+
 /**
  * do-whileブロックを生成し返す
  * @param  {[type]} statement [description]
@@ -205,11 +289,11 @@ function expressionStatementBlock(statement) {
  */
 function forStatementBlock(statement) {
     if(statement.init.type == 'VariableDeclaration'){
-        var block = createBlock('for_decl');
-        var initBlock = blockByStatement(statement.init);
-        var testBlock = blockByExpression(statement.test);
+        var block       = createBlock('for_decl');
+        var initBlock   = blockByStatement(statement.init);
+        var testBlock   = blockByExpression(statement.test);
         var updateBlock = blockByExpression(statement.update);
-        var stmBlock = blockByStatement(statement.body);
+        var stmBlock    = blockByStatement(statement.body);
         combineStatementBlock(block, initBlock, 0);
         combineIntoBlock(block, testBlock);
         combineIntoBlock(block, updateBlock);
@@ -260,11 +344,11 @@ function forOfStatementBlock(statement){
  * @return {Block}
  */
 function functionDeclarationBlock(statement){
-    const name = statement.id.name;
-    const params = statement.params;
+    const name      = statement.id.name;
+    const params    = statement.params;
     if(functionNameList.indexOf(name) !== -1){
-        let block = createBlock(name);
-        let stmBlock = blockByStatement(statement.body);
+        let block       = createBlock(name);
+        let stmBlock    = blockByStatement(statement.body);
         combineStatementBlock(block, stmBlock, 0);
         return block;
     } else {
@@ -396,6 +480,8 @@ function blockByExpression(expression, isStatement) {
             return logicalExpressionBlock(expression);
         case 'MemberExpression':
             return memberExpressionBlock(expression);
+        case 'ObjectExpression':
+            return objectExpressionBlock(expression);
         case 'ThisExpression':
             return thisExpressionBlock(expression);
         case 'UnaryExpression':
@@ -592,12 +678,43 @@ function logicalExpressionBlock(node){
     return block;
 }
 
+function objectExpressionBlock(node){
+    let block = createBlock('object_block');
+    let propertyBlock = null;
+    for(let property of node.properties){
+        let newPropertyBlock = createPropertyBlock(property);
+        if(propertyBlock) combineNextBlock(propertyBlock, newPropertyBlock);
+        else combineStatementBlock(block, newPropertyBlock, 0);
+        propertyBlock = newPropertyBlock;
+    }
+    return block;
+}
+
 /**
- * 現在は配列の要素指定のみ実現している。
- * x.func()やthis.xなどはまだ実装されていないので要実装
- * functionが変数として扱われるJavaScriptにおいて、
- * function呼び出し(CallExpression)のブロックが間違っているために
- * 無理矢理な実装をしている。特にx.func1().func2()などはブロックに現状変換できない
+ * ObjectExpressionのProperty専用の関数。propertyに応じてブロックを生成し返します。
+ * shorthandがtrueの場合やkindがget,setに対応できていません。
+ * @param  {[type]} property [description]
+ * @return {[type]}          [description]
+ */
+function createPropertyBlock(property){
+    if(property.shorthand) errorMessage('propertyBlockにおいてshorthandがtrueの場合が定義されていません。ごめんなさい');
+    switch(property.kind){
+        case 'init':
+            let block = createBlock('property_block');
+            let keyBlock = blockByExpression(property.key, false);
+            let valueBlock = blockByExpression(property.value, false);
+            combineIntoBlock(block, keyBlock);
+            combineIntoBlock(block, valueBlock);
+            return block;
+        case 'get':
+        case 'set':
+        default:
+            errorMessage('propertyBlockにおいてkind: ' + property.kind + 'は定義されていません。ごめんなさい');
+    }
+}
+
+/**
+ * x.a; x.func(); array[i]などのブロックを実装している
  * @param  {JSON} expression
  * @return {Block}
  */
@@ -734,9 +851,9 @@ function errorMessage(msg) {
  * @param {Block} parent [入れられる側のブロック]
  * @param {Block} child [入れる側のブロック]
 */
-function combineIntoBlock(parent, child) {
+function combineIntoBlock(parent, child, index) {
     if(parent === null || child === null) return;
-    var index = getAkiIndex(parent.inputList);
+    if(!index) index = getAkiIndex(parent.inputList);
     child.outputConnection.connect(parent.inputList[index].connection);
 }
 
@@ -763,9 +880,6 @@ function combineNextBlock(pre, post) {
         return true;
     }
     return false;
-    // else{
-    //     errorMessage("combineNextBlockにて接続できない" + pre + "\n"+ post);
-    // }
 }
 
 function getAkiIndex(inputList) {

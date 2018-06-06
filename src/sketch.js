@@ -1,6 +1,2 @@
-while (true) {
-  break;
+class Test{
 }
-do{
-  break;
-}while(true);
