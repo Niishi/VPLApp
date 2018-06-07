@@ -91,6 +91,9 @@ function blockByStatement(statement) {
             return classBodyBlock(statement);
         case 'DoWhileStatement':
             return doWhileStatementBlock(statement);
+        case 'EmptyStatement':
+            console.log('EmptyStatementがありました');
+            return null;
         case 'ExpressionStatement':
             return expressionStatementBlock(statement);
         case 'ForStatement':
@@ -107,15 +110,16 @@ function blockByStatement(statement) {
             return methodDefinitionBlock(statement);
         case 'ReturnStatement':
             return returnStatementBlock(statement);
-        case 'WhileStatement':
-            return whileStatementBlock(statement);
+        case 'SwitchCase':
+            return switchCaseBlock(statement);
+        case 'SwitchStatement':
+            return switchStatementBlock(statement);
         case 'VariableDeclaration':
             return variableDeclarationBlock(statement);
         case 'VariableDeclarator':
             return variableDeclaratorBlock(statement);
-        case 'EmptyStatement':
-            console.log('EmptyStatementがありました');
-            return null;
+        case 'WhileStatement':
+            return whileStatementBlock(statement);
         default:
             errorMessage("blockByStatementでエラー。存在しないstatement=>" + statement.type);
     }
@@ -126,9 +130,17 @@ function blockByStatement(statement) {
  * @return {Blockly.BlockSvg} 生成されたブロック列の先頭ブロック
  */
 function blockStatementBlock(statement) {
+    return createSequenceBlock(statement.body);
+}
+/**
+ * 連続するstatementを接続していき、先頭のブロックだけを返す
+ * @param  {[statement]} statements 文の配列
+ * @return {[type]}            [description]
+ */
+function createSequenceBlock(statements) {
     var firstBlock = null;
     var block = null;
-    for(stm of statement.body){
+    for(stm of statements){
         if(block === null){
             firstBlock = blockByStatement(stm);
             block = firstBlock;
@@ -187,21 +199,7 @@ function classDeclarationBlock(statement){
 }
 
 function classBodyBlock(statement){
-    var firstBlock = null;
-    var block = null;
-    for(stm of statement.body){
-        if(block === null){
-            firstBlock = blockByStatement(stm);
-            block = firstBlock;
-        }else{
-            var nextBlock = blockByStatement(stm);
-            if(nextBlock !== null){
-                combineNextBlock(block, nextBlock);
-                block = nextBlock;
-            }
-        }
-    }
-    return firstBlock;
+    return createSequenceBlock(statement.body)
 }
 /**
  * computedがtrueの場合は考慮していません。
@@ -211,7 +209,7 @@ function classBodyBlock(statement){
 function methodDefinitionBlock(statement){
     if(statement.computed){
         errorMessage('methodDefinitionBlockにおいて' +
-                     'computedがtrueの場合を考慮していません');
+                     'computedがtrueの場合が実装されていません');
     }
     switch(statement.kind){
         case 'method':
@@ -222,7 +220,7 @@ function methodDefinitionBlock(statement){
             }
             var functionExpression = statement.value;
             block.createValueInput(functionExpression.params.length);
-            let i = 0;
+            var i = 0;
             for(param of functionExpression.params){
                 block.getField("PARAM" + i).setValue(param.name);
                 i++;
@@ -240,12 +238,30 @@ function methodDefinitionBlock(statement){
                 block.getField("PARAM" + i).setValue(param.name);
                 i++;
             }
-            // var stmBlock = blockByStatement(functionExpression.body);
-            // combineStatementBlock(block, stmBlock, 1);
+            var stmBlock = blockByStatement(functionExpression.body);
+            combineStatementBlock(block, stmBlock, 1);
             return block;
         case 'set':
-        case 'kind':
-            errorMessage('set, kindに対応していません');
+        case 'get':
+            var block = createBlock('getset_method');
+            block.getField("KIND").setValue(statement.kind);
+            if(statement.key){
+                let nameBlock = blockByExpression(statement.key, false);
+                combineIntoBlock(block, nameBlock);
+            }
+            var functionExpression = statement.value;
+            block.createValueInput(functionExpression.params.length);
+            var i = 0;
+            for(param of functionExpression.params){
+                block.getField("PARAM" + i).setValue(param.name);
+                i++;
+            }
+            var stmBlock = blockByStatement(functionExpression.body);
+            combineStatementBlock(block, stmBlock, 2);
+            if(statement.static) block.getField('NAME').setValue(true);
+            return block;
+        default:
+            errorMessage('methodDefinitionBlockにおいて,以下のkindは設定されていません: ' + statement.kind);
     }
 }
 
@@ -397,6 +413,29 @@ function returnStatementBlock(statement){
     return block;
 }
 
+function switchStatementBlock(statement){
+    let block = createBlock('switch_block');
+    let discriminantBlock = blockByExpression(statement.discriminant, false);
+    let caseBlock = createSequenceBlock(statement.cases);
+    combineIntoBlock(block, discriminantBlock);
+    combineStatementBlock(block, caseBlock, 1);
+
+    return block;
+}
+function switchCaseBlock(statement){
+    let block;
+    let stmBlock = createSequenceBlock(statement.consequent);
+    if(statement.test){
+        block = createBlock('case_block')
+        let testBlock = blockByExpression(statement.test, false);
+        combineIntoBlock(block, testBlock);
+    }else{
+        block = createBlock('default_block');
+    }
+    combineStatementBlock(block, stmBlock, 1);
+    return block;
+
+}
 function whileStatementBlock(statement) {
     var block = createBlock('controls_whileUntil');
     var condBlock = blockByExpression(statement.test, false);

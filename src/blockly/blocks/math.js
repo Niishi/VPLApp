@@ -84,8 +84,8 @@ Blockly.defineBlocksWithJsonArray([  // BEGIN JSON EXTRACT
       },
       {
         "type": "input_value",
-        "name": "B",
-        "check": "Number"
+        "name": "B"
+        // "check": "Number"
       }
     ],
     "inputsInline": true,
