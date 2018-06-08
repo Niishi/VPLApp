@@ -119,3 +119,15 @@ Blockly.Blocks['continue_statement'] = {
         this.setHelpUrl("");
     }
 };
+
+Blockly.Blocks['null_block'] = {
+    init: function() {
+        this.appendDummyInput()
+            .appendField("null");
+        this.setInputsInline(true);
+        this.setOutput(true, null);
+        this.setColour(0);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};

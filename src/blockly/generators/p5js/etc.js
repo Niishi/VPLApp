@@ -101,3 +101,8 @@ Blockly.p5js['continue_statement'] = function(block) {
     if(value_name) code = value_name + " : " + code;
     return code;
 };
+
+Blockly.p5js['null_block'] = function(block) {
+    var code = 'null';
+    return [code, Blockly.p5js.ORDER_ATOMIC];
+};

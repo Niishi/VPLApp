@@ -4,6 +4,26 @@ const prompt = require('electron-prompt');
 
 var keyStack = [];  //入力数を保存する変数
 const KEY_TIME = 1000;   //1000msだけキー入力を待つ
+
+let varDict = {};
+
+Blockly.Names.equals = function(name1, name2) {
+  return name1 == name2;
+};
+
+Blockly.Names.prototype.getName = function(name, type) {
+  var normalized = name + '_' + type;
+  var prefix = (type == Blockly.Variables.NAME_TYPE) ?
+      this.variablePrefix_ : '';
+  if (normalized in this.db_) {
+    return prefix + this.db_[normalized];
+  }
+  var safeName = this.getDistinctName(name, type);
+  this.db_[normalized] = safeName.substr(prefix.length);
+  return safeName;
+};
+
+
 function func1(e) {
     if(e.lines[0].length === 1){    // NOTE: これはかなりテキトーなやり方。再考が必要。
         keyStack.push(1);  //1はテキトーな数。本当はkeyなどを入れた方が良さげ
@@ -41,7 +61,7 @@ function codeToBlock() {
     var editor = getAceEditor();
     var program = editor.getValue();
     try {
-        var ast = esprima.parse(program);
+        var ast = esprima.parse(program, {loc: true});
         workspace.clear();
     } catch (e) {
         console.error("構文エラー");
@@ -114,6 +134,10 @@ function blockByStatement(statement) {
             return switchCaseBlock(statement);
         case 'SwitchStatement':
             return switchStatementBlock(statement);
+        case 'ThrowStatement':
+            return throwStatementBlock(statement);
+        case 'TryStatement':
+            return tryStatementBlock(statement);
         case 'VariableDeclaration':
             return variableDeclarationBlock(statement);
         case 'VariableDeclarator':
@@ -121,7 +145,7 @@ function blockByStatement(statement) {
         case 'WhileStatement':
             return whileStatementBlock(statement);
         default:
-            errorMessage("blockByStatementでエラー。存在しないstatement=>" + statement.type);
+            errorMessage("blockByStatementでエラー。存在しないstatement=>" + statement.type, statement);
     }
 }
 /**
@@ -163,8 +187,8 @@ function createSequenceBlock(statements) {
 function breakStatementBlock(statement){
     let block = createBlock('break_statement');
     if(statement.label){
-        let identiferBlock = blockByExpression(statement.label, false);
-        combineIntoBlock(block, identiferBlock);
+        let identifierBlock = blockByExpression(statement.label, false);
+        combineIntoBlock(block, identifierBlock);
     }
     return block;
 }
@@ -177,8 +201,8 @@ function breakStatementBlock(statement){
 function continueStatementBlock(statement){
     let block = createBlock('continue_statement');
     if(statement.label){
-        let identiferBlock = blockByExpression(statement.label, false);
-        combineIntoBlock(block, identiferBlock);
+        let identifierBlock = blockByExpression(statement.label, false);
+        combineIntoBlock(block, identifierBlock);
     }
     return block;
 }
@@ -209,7 +233,7 @@ function classBodyBlock(statement){
 function methodDefinitionBlock(statement){
     if(statement.computed){
         errorMessage('methodDefinitionBlockにおいて' +
-                     'computedがtrueの場合が実装されていません');
+                     'computedがtrueの場合が実装されていません', statement);
     }
     switch(statement.kind){
         case 'method':
@@ -445,6 +469,41 @@ function whileStatementBlock(statement) {
     return block;
 }
 
+function throwStatementBlock(statement){
+    let block       = createBlock('throw_block');
+    let exprBlock   = blockByExpression(statement.argument, false);
+    combineIntoBlock(block, exprBlock);
+    return block;
+}
+
+function tryStatementBlock(statement){
+    let block       = createBlock('try_block');
+    let stmBlock    = blockByStatement(statement.block);
+    let lastBlock   = block;
+    if(statement.handler){
+        let catchBlock = catchClauseBlock(statement.handler);
+        combineNextBlock(block, catchBlock);
+        lastBlock = catchBlock;
+    }
+    if(statement.finalizer){
+        let finalBlock      = createBlock('finally_block');
+        let stmFinalBlock   = blockByStatement(statement.finalizer);
+        combineStatementBlock(finalBlock, stmFinalBlock, 0);
+        combineNextBlock(lastBlock, finalBlock);
+    }
+    combineStatementBlock(block, stmBlock, 0)
+    return block;
+}
+
+function catchClauseBlock(statement){
+    let block       = createBlock('catch_block');
+    let paramBlock  = blockByExpression(statement.param, false);
+    let stmBlock    = blockByStatement(statement.body);
+    combineIntoBlock(block, paramBlock);
+    combineStatementBlock(block, stmBlock, 1);
+    return block;
+}
+
 function variableDeclarationBlock(statement) {
     var firstBlock = null;
     var block = null;
@@ -512,7 +571,7 @@ function blockByExpression(expression, isStatement) {
         case 'FunctionExpression':
             return functionExpressionBlock(expression);
         case 'Identifier':
-            return identiferBlock(expression);
+            return identifierBlock(expression);
         case 'Literal':
             return literalBlock(expression);
         case 'LogicalExpression':
@@ -637,7 +696,7 @@ function functionExpressionBlock(node){
     return block;
 }
 
-function identiferBlock(node) {
+function identifierBlock(node) {
     switch(node.name){
         case 'mouseX':
         case 'mouseY':
@@ -666,7 +725,9 @@ function identiferBlock(node) {
 }
 
 function literalBlock(node) {
-    if(node.raw === "true" || node.raw === "false"){
+    if(node.value === null){
+        return createBlock('null_block');
+    }else if(node.raw === "true" || node.raw === "false"){
         var block = new Blockly.BlockSvg(workspace, "logic_boolean");
         block.initSvg();
         block.render();
@@ -695,7 +756,7 @@ function literalBlock(node) {
         return block;
     }
     else{
-        errorMessage("literalBlockでエラー。該当しないLiteral=>" + node.value);
+        errorMessage("literalBlockでエラー。該当しないLiteral=>" + node.value, node);
         return null;
     }
 }
@@ -880,10 +941,18 @@ function updateExpressionBlock(node) {
 /**
  * msgの内容をエラーとして出力する
  * @param  {String} msg エラーメッセージ
+ *
  */
-function errorMessage(msg) {
-    alert(msg);
-    console.error(msg);
+function errorMessage(msg, node) {
+    let message = msg;
+    if(node){
+        const start = node.start;
+        const end   = node.end;
+        message += '\n場所は' + start.line + "行目" + start.column + "列目から" +
+        end.line + "行目" + end.column + "列目までです";
+    }
+    alert(message);
+    console.error(message);
 }
 /**
  * parentブロックの中にchildブロックを入れこませる
@@ -949,9 +1018,12 @@ function searchBlock(name, list) {
  * @param {String} name 変数名
 */
 function createVariable(name) {
-    if(workspace.variableIndexOf(name) == -1){
-        workspace.createVariable(name);
+    const allVariables = workspace.getAllVariables();
+    for(const variable of allVariables){
+        if(variable.name === name) return;
     }
+    const newVariable = workspace.createVariable(name);
+    varDict[newVariable.name] = newVariable.getId();
 }
 
 function isColor (color) {
@@ -976,6 +1048,11 @@ function createBlock(name){
     block.initSvg();
     block.render();
     return block;
+}
+
+function getVariable(name){
+    console.log(varDict);
+    return workspace.getVariableById(varDict[name]);
 }
 
 function getRandomString(){

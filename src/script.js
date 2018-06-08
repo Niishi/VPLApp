@@ -78,7 +78,7 @@ var flag = false;
 function run() {
     saveCode();
     var codeText = getAceEditor().getValue();
-    eval(codeText);
+    // eval(codeText);
 }
 
 document.getElementById("blocklyDiv").ondblclick = function (event) {

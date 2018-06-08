@@ -45,7 +45,7 @@ Blockly.Blocks['new_expression'] = {
     init: function() {
         this.appendValueInput("NAME")
             .setCheck(null)
-            .appendField("return");
+            .appendField("new");
         this.setInputsInline(true);
         this.setOutput(true, null);
         this.setColour(45);

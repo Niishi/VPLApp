@@ -31,7 +31,7 @@ Blockly.p5js['new_expression'] = function(block) {
       if(!tab) tab = ', ';
     }
     code += ')';
-    return [code, Blockly.p5js.ORDER_NEW];
+    return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
 Blockly.p5js['decl_function'] = function(block) {
