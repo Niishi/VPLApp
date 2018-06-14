@@ -617,7 +617,7 @@ function assignmentExpressionBlock(node) {
         let block = createBlock(name);
         let stmBlock = blockByStatement(node.right.body);
         if(name === 'setup' || name === 'draw')combineStatementBlock(block, stmBlock, 0);
-        else combineStatementBlock(block, stmBlock, 1);
+        else combineStatementBlock(block, stmBlock, 0);
         return block;
     } else {
         var block = createBlock("assingment_expression");
@@ -1073,11 +1073,11 @@ function getRandomString(){
 //Aceエディタの設定
 function onLoad() {
     editor = ace.edit("input_txt");
+    editor.$blockScrolling = Infinity;
     editor.getSession().setMode("ace/mode/javascript");
     editor.setTheme("ace/theme/chrome");
     editor.setFontSize(20);
     editor.setHighlightActiveLine(false);
-    editor.$blockScrolling = Infinity;
     editor.on('change', func1);
 }
 

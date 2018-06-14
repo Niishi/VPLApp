@@ -11,7 +11,7 @@ let mainWindow;
 
 function createWindow() {
   // メインウィンドウを作成します
-  mainWindow = new BrowserWindow({width: 1900, height: 1100})
+  mainWindow = new BrowserWindow({width: 1900, height: 1100, frame:false})
 
   // メインウィンドウに表示するURLを指定します
   // （今回はmain.jsと同じディレクトリのindex.html）
@@ -22,13 +22,13 @@ function createWindow() {
   }))
 
   // デベロッパーツールの起動
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   // メインウィンドウが閉じられたときの処理
   mainWindow.on('closed', function () {
       mainWindow = null
     });
-    
+
 
 }
 

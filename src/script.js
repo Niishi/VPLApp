@@ -17,9 +17,12 @@ function changeEvent(e) {
     var code = Blockly.p5js.workspaceToCode(workspace);
     var editor = getAceEditor();
     var cursorPosition = editor.getCursorPosition();
+    editor.$blockScrolling = Infinity;
+
     editor.setValue(code,-1);
     editor.moveCursorToPosition(cursorPosition);
     // runCode();
+    run();
 
     //ブロック生成時のイベントを設定
     if(e.type === Blockly.Events.CREATE){
@@ -78,7 +81,7 @@ var flag = false;
 function run() {
     saveCode();
     var codeText = getAceEditor().getValue();
-    // eval(codeText);
+    eval(codeText);
 }
 
 document.getElementById("blocklyDiv").ondblclick = function (event) {
@@ -203,10 +206,6 @@ document.getElementById("blockTextBox").onkeypress = function(e){
         textBox.style.visibility = "hidden";
     }
     if(e.keyCode === 108){
-        // var allBlocks = workspace.getAllBlocks();
-        // for(block of allBlocks){
-        //     console.log(block);
-        // }
         console.log(getSelectedBlock());
     }
 
