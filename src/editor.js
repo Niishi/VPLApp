@@ -698,6 +698,8 @@ function functionExpressionBlock(node){
 
 function identifierBlock(node) {
     switch(node.name){
+        case 'test':
+            return createBlock("test_expression");  //あとで取り除く！！！！！！！！！！
         case 'mouseX':
         case 'mouseY':
             return createBlock(node.name);

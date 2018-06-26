@@ -106,3 +106,9 @@ Blockly.p5js['null_block'] = function(block) {
     var code = 'null';
     return [code, Blockly.p5js.ORDER_ATOMIC];
 };
+
+Blockly.JavaScript['test_expression'] = function(block) {
+  var text_name = block.getFieldValue('NAME');
+  var code = text_name;
+  return [code, Blockly.JavaScript.ORDER_NONE];
+};
