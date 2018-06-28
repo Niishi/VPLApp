@@ -11,6 +11,16 @@ var workspace = Blockly.inject(blocklyDiv, {
     trashcan: true
 });
 
+var hiddenBlocklyDiv = document.getElementById('hiddenBlocklyDiv');
+var hiddenWorkspace = Blockly.inject(hiddenBlocklyDiv, {
+    grid: {
+        spacing: 20,
+        length: 3,
+        colour: '#ccc',
+        snap: true
+    }
+});
+
 var rangeId;
 var workspaceOffset = workspace.getOriginOffsetInPixels();
 function changeEvent(e) {
@@ -86,14 +96,28 @@ function run() {
 
 document.getElementById("blocklyDiv").ondblclick = function (event) {
     var blockTextBox = document.getElementById("blockTextBox");
-    if(blockTextBox.style.visibility == 'hidden'){
-        blockTextBox.style.left = event.pageX + 'px';
-        blockTextBox.style.top = event.pageY + 'px';
+    var cssStyle = getComputedStyle(blockTextBox, null);
+    if(cssStyle.getPropertyValue("visibility") == 'hidden'){
+        blockTextBox.style.left = (event.pageX+30) + 'px';
+        blockTextBox.style.top = (event.pageY+130) + 'px';
         blockTextBox.style.visibility = 'visible';
         blockTextBox.value = "";
         blockTextBox.focus();
     }else{
         blockTextBox.style.visibility = 'hidden';
+    }
+
+    var blocklyDiv = document.getElementById("blocklyDiv");
+    blocklyDiv.style.filter = "blur(4px)";
+
+    var hiddenBlocklyDiv = document.getElementById('hiddenBlocklyDiv');
+    cssStyle = getComputedStyle(hiddenBlocklyDiv, null);
+    if(cssStyle.getPropertyValue("visibility") == 'hidden'){
+        hiddenBlocklyDiv.style.left = (event.pageX-250) + 'px';
+        hiddenBlocklyDiv.style.top =  (event.pageY-250) + 'px';
+        hiddenBlocklyDiv.style.visibility = 'visible';
+        hiddenBlocklyDiv.style.width = 500 + 'px';
+        hiddenBlocklyDiv.style.height = 500 + 'px';
     }
 }
 
@@ -172,39 +196,94 @@ var searchOption = {
     regExp : false
 };
 
-document.getElementById("blockTextBox").onkeypress = function(e){
-    var textBox = document.getElementById("blockTextBox");
-    var clientRect = textBox.getBoundingClientRect();
-    if ( e.keyCode === 13 ) {   //エンターキーが押されたとき
-        var block = blockByCode(textBox.value);
-        if(block === "error"){
-            alert("SyntaxError : " + textBox.value);
-            return;
+function completion(e){
+    if(event.shiftKey){
+        switch (e.keyCode) {
+            case 50:
+                return '"';
+            case 39:
+                return "'";
+            case 56:    //'('
+                return ')';
+            case 219:   //'{'
+                return '}';
+            default:
+                return null;
         }
-        // block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
-        block.moveBy(clientRect.left- 85, clientRect.top-25);  //TODO　マジックナンバー使用！要変更
-
-        if(block.outputConnection !== null){
-            var connectionDB = block.outputConnection.dbOpposite_;
-            var closestConnection = connectionDB.searchForClosest(block.outputConnection, 2000, new goog.math.Coordinate(-block.width,0)).connection;
-            if(closestConnection !== null && closestConnection.targetConnection === null){
-                block.outputConnection.connect(closestConnection);
-            }
-        }else{
-            const parentBlock = getSelectedBlock();
-            if(parentBlock !== null && block.previousConnection !== null){
-                // if(parentBlock.inputList[0].connection != null){
-
-                if(parentBlock.inputList[0].connection != null && !parentBlock.inputList[0].connection.isConnected()){
-                    block.previousConnection.connect(parentBlock.inputList[0].connection);
-                }else if(parentBlock.nextConnection !== null){
-                    block.previousConnection.connect(parentBlock.nextConnection);
-                }
-            }
-        }
-
-        textBox.style.visibility = "hidden";
     }
+    switch(e.keyCode){
+        case 56:
+            return ']';
+    }
+}
+
+function insertTextBox(textBox, word){
+    let sentence = textBox.value;
+    const len = sentence.length;
+    const pos = textBox.selectionStart;
+
+    const before = sentence.substr(0, pos);
+    const after  = sentence.substr(pos, len);
+
+    sentence = before + word + after;
+
+    textBox.value = sentence;
+    textBox.setSelectionRange(pos, pos);
+}
+
+let block = null;
+document.getElementById("blockTextBox").onkeyup = function(e){
+    let textBox = document.getElementById("blockTextBox");
+
+    const c = completion(e);
+    if(c) insertTextBox(textBox, c);
+    let clientRect = textBox.getBoundingClientRect();
+    let newBlock = blockByCode(textBox.value);
+    if(newBlock !== 'error' && newBlock !== null) {
+        newBlock.moveBy(50, 100);
+        if(block) block.dispose();
+        block = newBlock;
+    }
+    if(e.keyCode === 13){   //エンターキーが押されたとき
+        if(block){
+            workspace.addTopBlock(block);
+            let hiddenBlocklyDiv = document.getElementById("hiddenBlocklyDiv");
+            textBox.style.visibility = "hidden";
+            hiddenBlocklyDiv.style.visibility = "hidden";
+            var blocklyDiv = document.getElementById("blocklyDiv");
+            blocklyDiv.style.filter = "";
+        }
+    }
+    // if ( e.keyCode === 13 ) {   //エンターキーが押されたとき
+    //     if(block !== null) block.dispose();
+    //     block = blockByCode(textBox.value);
+    //     if(block === "error"){
+    //         alert("SyntaxError : " + textBox.value);
+    //         return;
+    //     }
+    //     // block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
+    //     block.moveBy(clientRect.left- 85, clientRect.top-25);  //TODO　マジックナンバー使用！要変更
+    //
+    //     if(block.outputConnection !== null){
+    //         var connectionDB = block.outputConnection.dbOpposite_;
+    //         var closestConnection = connectionDB.searchForClosest(block.outputConnection, 2000, new goog.math.Coordinate(-block.width,0)).connection;
+    //         if(closestConnection !== null && closestConnection.targetConnection === null){
+    //             block.outputConnection.connect(closestConnection);
+    //         }
+    //     }else{
+    //         const parentBlock = getSelectedBlock();
+    //         if(parentBlock !== null && block.previousConnection !== null){
+    //             // if(parentBlock.inputList[0].connection != null){
+    //
+    //             if(parentBlock.inputList[0].connection != null && !parentBlock.inputList[0].connection.isConnected()){
+    //                 block.previousConnection.connect(parentBlock.inputList[0].connection);
+    //             }else if(parentBlock.nextConnection !== null){
+    //                 block.previousConnection.connect(parentBlock.nextConnection);
+    //             }
+    //         }
+    //     }
+    //     textBox.style.visibility = "hidden";
+    // }
     if(e.keyCode === 108){
         console.log(getSelectedBlock());
     }

@@ -7,6 +7,11 @@ const KEY_TIME = 1000;   //1000msだけキー入力を待つ
 
 let varDict = {};
 
+var currentWorkspace;
+
+function setCurrentWorkspace(workspace){
+    currentWorkspace = workspace;
+}
 Blockly.Names.equals = function(name1, name2) {
   return name1 == name2;
 };
@@ -38,6 +43,7 @@ function func1(e) {
 }
 
 function blockByCode(code){
+    setCurrentWorkspace(hiddenWorkspace);
     try {
         var ast = esprima.parse(code);
     } catch (e) {
@@ -58,11 +64,12 @@ var blockX = 100;
 var blockMargin = 30;
 
 function codeToBlock() {
+    setCurrentWorkspace(workspace);
     var editor = getAceEditor();
     var program = editor.getValue();
     try {
         var ast = esprima.parse(program, {loc: true});
-        workspace.clear();
+        currentWorkspace.clear();
     } catch (e) {
         console.error("構文エラー");
         return;
@@ -527,7 +534,7 @@ function variableDeclaratorBlock(statement, kind) {
         var name = statement.id.name;
         createVariable(name);
         var block = createBlock("var_decl");
-        var variable = workspace.getVariable(name);
+        var variable = currentWorkspace.getVariable(name);
         block.getField("NAME").setValue(variable.getId());
         switch(kind){
             case 'var':
@@ -717,8 +724,8 @@ function identifierBlock(node) {
             return block;
         default:
             createVariable(node.name);
-            var variable = workspace.getVariable(node.name);
-            var block = new Blockly.BlockSvg(workspace, "variables_get");
+            var variable = currentWorkspace.getVariable(node.name);
+            var block = new Blockly.BlockSvg(currentWorkspace, "variables_get");
             block.getField("VAR").setValue(variable.getId());
             block.initSvg();
             block.render();
@@ -730,7 +737,7 @@ function literalBlock(node) {
     if(node.value === null){
         return createBlock('null_block');
     }else if(node.raw === "true" || node.raw === "false"){
-        var block = new Blockly.BlockSvg(workspace, "logic_boolean");
+        var block = new Blockly.BlockSvg(currentWorkspace, "logic_boolean");
         block.initSvg();
         block.render();
         if(node.raw === "true"){
@@ -740,13 +747,13 @@ function literalBlock(node) {
         }
         return block;
     }else if(isColor(node.value)){
-        var block = new Blockly.BlockSvg(workspace, "colour_picker");
+        var block = new Blockly.BlockSvg(currentWorkspace, "colour_picker");
         block.initSvg();
         block.render();
         block.inputList[0].fieldRow[0].setValue(node.value);
         return block;
     }else if(isNumber(node.value)){
-        var block = new Blockly.BlockSvg(workspace, "math_number");
+        var block = new Blockly.BlockSvg(currentWorkspace, "math_number");
         block.initSvg();
         block.render();
 
@@ -931,7 +938,7 @@ function updateExpressionBlock(node) {
     var block = createBlock("updateexpression");
     var arg = node.argument;
     createVariable(arg.name);
-    var variable = workspace.getVariable(arg.name);
+    var variable = currentWorkspace.getVariable(arg.name);
     block.getField("VAR").setValue(variable.getId());
     if(node.operator === '++'){
         block.getField('OPE').setValue('INC');
@@ -1020,11 +1027,11 @@ function searchBlock(name, list) {
  * @param {String} name 変数名
 */
 function createVariable(name) {
-    const allVariables = workspace.getAllVariables();
+    const allVariables = currentWorkspace.getAllVariables();
     for(const variable of allVariables){
         if(variable.name === name) return;
     }
-    const newVariable = workspace.createVariable(name);
+    const newVariable = currentWorkspace.createVariable(name);
     varDict[newVariable.name] = newVariable.getId();
 }
 
@@ -1046,7 +1053,7 @@ function isString(obj){
  * @return {Block}      ブロックを返す
  */
 function createBlock(name){
-    var block = new Blockly.BlockSvg(workspace, name);
+    var block = new Blockly.BlockSvg(currentWorkspace, name);
     block.initSvg();
     block.render();
     return block;
@@ -1054,7 +1061,7 @@ function createBlock(name){
 
 function getVariable(name){
     console.log(varDict);
-    return workspace.getVariableById(varDict[name]);
+    return currentWorkspace.getVariableById(varDict[name]);
 }
 
 function getRandomString(){

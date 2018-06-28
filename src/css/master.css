@@ -39,20 +39,43 @@ button, input, select, textarea {
     font-size: 18px;
     border-radius: 3px;
     visibility: hidden;
+    z-index: 2;
 }
+
+#hiddenBlocklyDiv{
+    position: absolute;
+    left:auto;
+    top: auto;
+    width:500px;
+    height: 500px;
+    z-index: 1;
+    visibility: hidden;
+
+    /*フォーカスした時に影をつける*/
+    box-shadow: 0px 0px 5px 5px rgba(0,0,0,0.2);
+    /*フォーカスした時に枠線を太く濃く*/
+    border: solid 2px #666;
+}
+
 #blockTextBox:focus {
-/*フォーカスした時に影をつける*/
-border: 0px;
-box-shadow: 0px 0px 5px 5px rgba(0,0,0,0.2);
-/*フォーカスした時に枠線を太く濃く*/
-border: solid 2px #666;
+    /*フォーカスした時に影をつける*/
+    box-shadow: 0px 0px 5px 5px rgba(0,0,0,0.2);
+    /*フォーカスした時に枠線を太く濃く*/
+    border: solid 2px #666;
 }
 
 #blocklyDiv{
     float: left;
     width: 50%;
     height: 99%;
+    /* opacity: 0.5; */
 }
+
+#blocklyDiv::before{
+
+}
+
+
 #p5Canvas{
     float:right;
     width: 40%;
