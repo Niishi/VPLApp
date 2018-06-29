@@ -56,7 +56,7 @@ Blockly.p5js['math_arithmetic'] = function(block) {
     return [code, Blockly.p5js.ORDER_FUNCTION_CALL];
   }
   code = argument0 + operator + argument1;
-  return [code, order];
+  return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
 Blockly.p5js['math_single'] = function(block) {

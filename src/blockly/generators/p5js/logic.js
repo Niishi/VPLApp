@@ -68,7 +68,7 @@ Blockly.p5js['logic_compare'] = function(block) {
   var argument0 = Blockly.p5js.valueToCode(block, 'A', order) || '0';
   var argument1 = Blockly.p5js.valueToCode(block, 'B', order) || '0';
   var code = argument0 + ' ' + operator + ' ' + argument1;
-  return [code, order];
+  return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
 Blockly.p5js['logic_operation'] = function(block) {

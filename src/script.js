@@ -94,10 +94,15 @@ function run() {
     eval(codeText);
 }
 
+function getPropertyValue(elementName, propertyName){
+    const element = document.getElementById(elementName);
+    const cssStyle = getComputedStyle(element, null);
+    return cssStyle.getPropertyValue(propertyName);
+}
+
+
 document.getElementById("blocklyDiv").ondblclick = function (event) {
-    var blockTextBox = document.getElementById("blockTextBox");
-    var cssStyle = getComputedStyle(blockTextBox, null);
-    if(cssStyle.getPropertyValue("visibility") == 'hidden'){
+    if(getPropertyValue("blockTextBox", "visibility") == 'hidden'){
         blockTextBox.style.left = (event.pageX+30) + 'px';
         blockTextBox.style.top = (event.pageY+130) + 'px';
         blockTextBox.style.visibility = 'visible';
@@ -110,9 +115,7 @@ document.getElementById("blocklyDiv").ondblclick = function (event) {
     var blocklyDiv = document.getElementById("blocklyDiv");
     blocklyDiv.style.filter = "blur(4px)";
 
-    var hiddenBlocklyDiv = document.getElementById('hiddenBlocklyDiv');
-    cssStyle = getComputedStyle(hiddenBlocklyDiv, null);
-    if(cssStyle.getPropertyValue("visibility") == 'hidden'){
+    if(getPropertyValue("hiddenBlocklyDiv", "visibility") == 'hidden'){
         hiddenBlocklyDiv.style.left = (event.pageX-250) + 'px';
         hiddenBlocklyDiv.style.top =  (event.pageY-250) + 'px';
         hiddenBlocklyDiv.style.visibility = 'visible';
@@ -238,7 +241,7 @@ document.getElementById("blockTextBox").onkeyup = function(e){
     const c = completion(e);
     if(c) insertTextBox(textBox, c);
     let clientRect = textBox.getBoundingClientRect();
-    let newBlock = blockByCode(textBox.value);
+    let newBlock = blockByCode(textBox.value, hiddenWorkspace);
     if(newBlock !== 'error' && newBlock !== null) {
         newBlock.moveBy(50, 100);
         if(block) block.dispose();
@@ -246,8 +249,10 @@ document.getElementById("blockTextBox").onkeyup = function(e){
     }
     if(e.keyCode === 13){   //エンターキーが押されたとき
         if(block){
-            workspace.addTopBlock(block);
-            let hiddenBlocklyDiv = document.getElementById("hiddenBlocklyDiv");
+            let newBlock = blockByCode(textBox.value, workspace);
+            const x = parseInt(getPropertyValue("hiddenBlocklyDiv", "left"),10) + 50;
+            const y = parseInt(getPropertyValue("hiddenBlocklyDiv", "top"),10) + 100;
+            newBlock.moveBy(x,y);
             textBox.style.visibility = "hidden";
             hiddenBlocklyDiv.style.visibility = "hidden";
             var blocklyDiv = document.getElementById("blocklyDiv");

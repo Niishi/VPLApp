@@ -7,5 +7,5 @@ Blockly.p5js['updateexpression'] = function(block) {
   else ope = '--';
   var code = variable_var + ope;
   // TODO: Change ORDER_NONE to the correct strength.
-  return [code, Blockly.p5js.ORDER_NONE];
+  return [code, Blockly.p5js.ORDER_ATOMIC];
 };

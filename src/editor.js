@@ -42,8 +42,8 @@ function func1(e) {
     }
 }
 
-function blockByCode(code){
-    setCurrentWorkspace(hiddenWorkspace);
+function blockByCode(code, workspace){
+    setCurrentWorkspace(workspace);
     try {
         var ast = esprima.parse(code);
     } catch (e) {
@@ -1086,6 +1086,10 @@ function onLoad() {
     editor.getSession().setMode("ace/mode/javascript");
     editor.setTheme("ace/theme/chrome");
     editor.setFontSize(20);
+    editor.session.setOptions({
+        tabSize: 2,
+        useSoftTabs: true
+    });
     editor.setHighlightActiveLine(false);
     editor.on('change', func1);
 }
