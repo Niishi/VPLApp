@@ -36,6 +36,25 @@ Blockly.Blocks['constants'] = {
     }
 };
 
+Blockly.Blocks['conditional_expression'] = {
+    init: function() {
+        this.appendValueInput("test")
+            .setCheck(null)
+            .appendField("条件");
+        this.appendValueInput("consequent")
+            .setCheck(null)
+            .appendField("が正の時");
+        this.appendValueInput("alternate")
+            .setCheck(null)
+            .appendField("が負の時");
+        this.setInputsInline(true);
+        this.setOutput(true, null);
+        this.setColour(180);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
+
 Blockly.Blocks['assingment_expression'] = {
     init: function() {
         this.appendValueInput("LEFT")

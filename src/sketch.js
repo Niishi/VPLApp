@@ -14,6 +14,5 @@ draw = function(){
   if (x > width) {
     x = 0;
   }
+  var a = true ? 10 : 20;
 }
-
-x;

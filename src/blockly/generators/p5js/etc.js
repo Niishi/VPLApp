@@ -4,6 +4,14 @@ Blockly.p5js['expression_statement'] = function(block) {
     return code;
 };
 
+Blockly.p5js['conditional_expression'] = function(block) {
+    var value_test = Blockly.p5js.valueToCode(block, 'test', Blockly.p5js.ORDER_ATOMIC);
+    var value_consequent = Blockly.p5js.valueToCode(block, 'consequent', Blockly.p5js.ORDER_ATOMIC);
+    var value_alternate = Blockly.p5js.valueToCode(block, 'alternate', Blockly.p5js.ORDER_ATOMIC);
+    var code = value_test + " ? " + value_consequent + " : " + value_alternate;
+    return [code, Blockly.p5js.ORDER_ATOMIC];
+};
+
 Blockly.p5js['unary'] = function(block) {
     var dropdown_op = block.getFieldValue('OP');
     var value_name = Blockly.p5js.valueToCode(block, 'NAME', Blockly.p5js.ORDER_ATOMIC);
@@ -107,8 +115,8 @@ Blockly.p5js['null_block'] = function(block) {
     return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
-Blockly.JavaScript['test_expression'] = function(block) {
+Blockly.p5js['test_expression'] = function(block) {
   var text_name = block.getFieldValue('NAME');
   var code = text_name;
-  return [code, Blockly.JavaScript.ORDER_NONE];
+  return [code, Blockly.p5js.ORDER_NONE];
 };

@@ -572,6 +572,8 @@ function blockByExpression(expression, isStatement) {
             return assignmentExpressionBlock(expression);
         case 'BinaryExpression':
             return binaryExpressionBlock(expression);
+        case 'ConditionalExpression':
+            return conditionalExpressionBlock(expression);
         case 'CallExpression':
         case 'NewExpression':
             return callExpressionBlock(expression, isStatement);
@@ -895,6 +897,17 @@ function binaryExpressionBlock(node) {
     var rightBlock = blockByExpression(node.right,false);
     combineIntoBlock(block, leftBlock);
     combineIntoBlock(block, rightBlock);
+    return block;
+}
+
+function conditionalExpressionBlock(node){
+    let block = createBlock('conditional_expression');
+    let testBlock = blockByExpression(node.test);
+    let consequentBlock = blockByExpression(node.consequent);
+    let alternateBlock = blockByExpression(node.alternate);
+    combineIntoBlock(block, testBlock);
+    combineIntoBlock(block, consequentBlock);
+    combineIntoBlock(block, alternateBlock);
     return block;
 }
 
