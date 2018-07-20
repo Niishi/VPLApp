@@ -249,6 +249,7 @@ document.getElementById("blockTextBox").onkeyup = function(e){
     }
     if(e.keyCode === 13){   //エンターキーが押されたとき
         if(block){
+            hiddenWorkspace.clear();
             let newBlock = blockByCode(textBox.value, workspace);
             const x = parseInt(getPropertyValue("hiddenBlocklyDiv", "left"),10) + 50;
             const y = parseInt(getPropertyValue("hiddenBlocklyDiv", "top"),10) + 100;

@@ -11,7 +11,7 @@ let mainWindow;
 
 function createWindow() {
   // メインウィンドウを作成します
-  mainWindow = new BrowserWindow({width: 1900, height: 1100,'fullscreen':true, 'frame':false})
+  mainWindow = new BrowserWindow({width: 1900, height: 1100, "fullscreen":false, "frame":true})
 
   // メインウィンドウに表示するURLを指定します
   // （今回はmain.jsと同じディレクトリのindex.html）
