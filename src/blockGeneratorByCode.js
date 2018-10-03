@@ -89,6 +89,7 @@ function isValidCode(code){
 }
 
 function trimError(error){
+    console.log(error);
     const editor = getAceEditor();
     const editSession = editor.getSession();
     const document = editSession.getDocument();

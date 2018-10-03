@@ -13,7 +13,6 @@ function collapseAllBlock(){
 }
 
 function collapseBlock(parent, level = 0){
-
     // let block = parent.nextConnection === null ? parent.getChildren()[0];
     while(block !== null){
         block = block.getNextBlock();
@@ -48,24 +47,5 @@ function expandAllBlock(){
     const allBlocks = workspace.getAllBlocks(true);
     for(ablock of allBlocks){
         if(ablock.myCollapse) ablock.setCollapsed(false);
-    }
-}
-
-
-const minimapRate = 0.1;
-function drawMinimap(){
-    const minimapCanvas = document.getElementById("minimap_canvas");
-    const context = minimapCanvas.getContext("2d");
-    context.clearRect(0,0,minimapCanvas.width,minimapCanvas.height);
-    const allBlocks = workspace.getAllBlocks(true);
-    for(ablock of allBlocks){
-        console.log(ablock);
-        
-        const x = ablock.getBoundingRectangle().topLeft.x;
-        const y = ablock.getBoundingRectangle().topLeft.y;
-        const w = ablock.getBoundingRectangle().bottomRight.x - x;
-        const h = ablock.getBoundingRectangle().bottomRight.y - y;
-        context.fillStyle = ablock.getColour();
-        context.fillRect(x*minimapRate,y*minimapRate,w*minimapRate,h*minimapRate);
     }
 }

@@ -13,7 +13,11 @@ button, input, select, textarea {
 }
 
 #minimap_canvas {
-    background: #666;
+    background-color : rgba(200,200,200, 0.7);
+    position: absolute;
+    top: 0px;
+    left: 700px;
+    z-index: 1;
 }
 
 
