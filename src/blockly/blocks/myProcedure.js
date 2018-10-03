@@ -1,7 +1,7 @@
 Blockly.Blocks['no_return_function'] = {
     init: function() {
-        this.appendDummyInput()
-            .appendField(new Blockly.FieldTextInput("functionName"), "FUNCTION_NAME");
+        this.appendValueInput("NAME")
+            .setCheck(null);
         this.setInputsInline(true);
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);

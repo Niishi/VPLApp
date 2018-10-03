@@ -21,7 +21,7 @@ var hiddenWorkspace = Blockly.inject(hiddenBlocklyDiv, {
     }
 });
 
-var rangeId;
+var rangeIds = [];
 var workspaceOffset = workspace.getOriginOffsetInPixels();
 function changeEvent(e) {
     var code = Blockly.p5js.workspaceToCode(workspace);
@@ -32,6 +32,7 @@ function changeEvent(e) {
     editor.setValue(code,-1);
     editor.moveCursorToPosition(cursorPosition);
     // runCode();
+    drawMinimap();
     run();
 
     //ブロック生成時のイベントを設定
@@ -53,34 +54,49 @@ function changeEvent(e) {
     }
 
 }
+
+/**
+ * 指定したブロックに対応するテキスト型のコードを返す
+ * @param  {[type]} block 指定したブロック
+ * @return {[type]} テキストを返す
+ */
+function getText(block){
+    let text = Blockly.p5js.blockToCode(block);
+    if(typeof(text) === 'object'){
+        text = text[0];
+    }else if(typeof(text) === 'string'){
+        text = text.split("\n")[0];
+    }
+    return text;
+}
 /**
  * 指定したブロックに対応するテキストをハイライト表示させる
  * @param {[type]} block [description]
  */
 function addMarkerToBlock(block){
-    var text = Blockly.p5js.blockToCode(block);
-    if(typeof(text) === "object"){
-        text = text[0];
-    }else if(typeof(text) === "string"){
-        text = text.split("\n")[0];
-
-    }
-
+    var text = getText(block);
     var editor = getAceEditor();
     var editSession = editor.getSession();
     var search = new Search();
     searchOption.needle = text;
+    searchOption.wholeWord = true;
     search.set(searchOption);
-    var range = search.find(editSession);
-    if(rangeId){
+    const ranges = search.findAll(editSession);
+    for(rangeId of rangeIds){
         editSession.removeMarker(rangeId);
     }
-    if(range){
-        rangeId = editSession.addMarker(range, "highlight_line", "text");
-        // range = editSession.highlightLines(range.start.row, range.end.row-1, "highlight_line");
-        // rangeId = range.id;
-    }else{
-        console.log("Not Found : " + text);
+    rangeIds = [];
+
+    const allBlocks = workspace.getAllBlocks(true);
+    let count = 0;
+    for(ablock of allBlocks){
+        atext = getText(ablock);
+        if(block === ablock) break;
+        if(atext === text) count++;
+    }
+    if(ranges.length > 0){
+        rangeId = editSession.addMarker(ranges[count], "highlight_line", "text");
+        rangeIds.push(rangeId);
     }
 }
 // workspaceのリスナーへ登録を忘れずに
@@ -102,7 +118,7 @@ function getPropertyValue(elementName, propertyName){
 
 
 document.getElementById("blocklyDiv").ondblclick = function (event) {
-    if(getPropertyValue("blockTextBox", "visibility") == 'hidden'){
+    if(getPropertyValue("blockTextBox", "visibility") === 'hidden'){
         blockTextBox.style.left = (event.pageX+30) + 'px';
         blockTextBox.style.top = (event.pageY+130) + 'px';
         blockTextBox.style.visibility = 'visible';
@@ -112,10 +128,11 @@ document.getElementById("blocklyDiv").ondblclick = function (event) {
         blockTextBox.style.visibility = 'hidden';
     }
 
+    //周りの背景にぼかしを入れる
     var blocklyDiv = document.getElementById("blocklyDiv");
     blocklyDiv.style.filter = "blur(4px)";
 
-    if(getPropertyValue("hiddenBlocklyDiv", "visibility") == 'hidden'){
+    if(getPropertyValue("hiddenBlocklyDiv", "visibility") === 'hidden'){
         hiddenBlocklyDiv.style.left = (event.pageX-250) + 'px';
         hiddenBlocklyDiv.style.top =  (event.pageY-250) + 'px';
         hiddenBlocklyDiv.style.visibility = 'visible';
@@ -185,8 +202,6 @@ document.onkeydown  = function (e) {
     }
 }
 
-var blockList = ["setup","size", "draw", "fill","background","ellipse","rect","stroke", "noFill","noStroke"];
-
 var Search = require('ace/search').Search;
 var Range = require('ace/range').Range;
 var searchOption = {
@@ -238,11 +253,14 @@ let block = null;
 document.getElementById("blockTextBox").onkeyup = function(e){
     let textBox = document.getElementById("blockTextBox");
 
-    const c = completion(e);
+    const c = completion(e);    //'('や""などの補完作業を行う
     if(c) insertTextBox(textBox, c);
     let clientRect = textBox.getBoundingClientRect();
-    let newBlock = blockByCode(textBox.value, hiddenWorkspace);
-    if(newBlock !== 'error' && newBlock !== null) {
+    let code = textBox.value;
+    let newBlock = blockByCode(code, hiddenWorkspace);
+    if(newBlock === 'error'){   //構文エラーが起こった場合にブロックの提案を行う
+
+    }else if(newBlock !== null) {
         newBlock.moveBy(50, 100);
         if(block) block.dispose();
         block = newBlock;
@@ -260,36 +278,6 @@ document.getElementById("blockTextBox").onkeyup = function(e){
             blocklyDiv.style.filter = "";
         }
     }
-    // if ( e.keyCode === 13 ) {   //エンターキーが押されたとき
-    //     if(block !== null) block.dispose();
-    //     block = blockByCode(textBox.value);
-    //     if(block === "error"){
-    //         alert("SyntaxError : " + textBox.value);
-    //         return;
-    //     }
-    //     // block.moveBy(clientRect.left - workspaceOffset.x, clientRect.top - workspaceOffset.y);
-    //     block.moveBy(clientRect.left- 85, clientRect.top-25);  //TODO　マジックナンバー使用！要変更
-    //
-    //     if(block.outputConnection !== null){
-    //         var connectionDB = block.outputConnection.dbOpposite_;
-    //         var closestConnection = connectionDB.searchForClosest(block.outputConnection, 2000, new goog.math.Coordinate(-block.width,0)).connection;
-    //         if(closestConnection !== null && closestConnection.targetConnection === null){
-    //             block.outputConnection.connect(closestConnection);
-    //         }
-    //     }else{
-    //         const parentBlock = getSelectedBlock();
-    //         if(parentBlock !== null && block.previousConnection !== null){
-    //             // if(parentBlock.inputList[0].connection != null){
-    //
-    //             if(parentBlock.inputList[0].connection != null && !parentBlock.inputList[0].connection.isConnected()){
-    //                 block.previousConnection.connect(parentBlock.inputList[0].connection);
-    //             }else if(parentBlock.nextConnection !== null){
-    //                 block.previousConnection.connect(parentBlock.nextConnection);
-    //             }
-    //         }
-    //     }
-    //     textBox.style.visibility = "hidden";
-    // }
     if(e.keyCode === 108){
         console.log(getSelectedBlock());
     }
