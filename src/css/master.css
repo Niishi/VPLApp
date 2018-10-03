@@ -12,14 +12,11 @@ button, input, select, textarea {
   font-size   : 100%;
 }
 
-#input_area {
-    height: 50%;
+#minimap_canvas {
+    background: #666;
 }
 
-#input_txt {
-    width: 48%;
-    height: 100%;
-}
+
 
 
 #blocklyArea {
@@ -75,10 +72,20 @@ button, input, select, textarea {
 
 }
 
+#input_area {
+    float: right;
+    width: 50%;
+    height: 50%;
+}
 
-#p5Canvas{
+#input_txt {
+    width: 100%;
+    height: 100%;
+}
+
+#sketch-container{
     float:right;
-    width: 40%;
+    width: 50%;
     height: 50%;
 }
 

@@ -1,18 +1,18 @@
 setup = function(){
-  const canvas = createCanvas(900, 550);
+  var canvas = createCanvas(800, 600);
   canvas.parent('sketch');
-}
-
-var x = 0;
+};
 
 draw = function(){
-  background(255);
-  noStroke();
-  fill('#99ff99');
-  rect(x, 100, x, x);
-  x = x + 5;
-  if (x > width) {
-    x = 0;
+  background(200, 250, 220);
+  fill('#ffffff');
+  for (var i = 0; i < 10; i++ ) {
+    rect(100, 100, 300, 200);
   }
-  var a = true ? 10 : 20;
-}
+  fill('#ff0000');
+  for (var i = 0; i < 10; i++ ) {
+    ellipse(100,200,120,120);
+  }
+  if (x == 0) {
+  }
+};

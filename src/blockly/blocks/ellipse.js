@@ -1,4 +1,4 @@
-Blockly.Blocks["ellipse"] = {
+Blockly.Blocks["ellipse_4"] = {
 	init: function(){
 		this.appendDummyInput()
 			.appendField("ellipse")

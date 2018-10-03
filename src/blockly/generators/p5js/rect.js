@@ -1,4 +1,4 @@
-Blockly.p5js['rect'] = function(block) {
+Blockly.p5js['rect_4'] = function(block) {
   var value_x = Blockly.p5js.valueToCode(block, 'x', Blockly.p5js.ORDER_ATOMIC);
   var value_y = Blockly.p5js.valueToCode(block, 'y', Blockly.p5js.ORDER_ATOMIC);
   var value_w = Blockly.p5js.valueToCode(block, 'w', Blockly.p5js.ORDER_ATOMIC);

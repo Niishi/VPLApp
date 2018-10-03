@@ -1,4 +1,5 @@
 Blockly.p5js['expression_statement'] = function(block) {
+    if(block.code) return block.code;
     var value_expr = Blockly.p5js.valueToCode(block, 'EXPR', Blockly.p5js.ORDER_ATOMIC);
     var code = value_expr + ';\n';
     return code;
@@ -77,6 +78,40 @@ Blockly.p5js['assingment_expression'] = function(block) {
   return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
+Blockly.p5js['assingment_expression_statement'] = function(block) {
+  var variable_name = Blockly.p5js.valueToCode(block, 'LEFT', Blockly.p5js.ORDER_ATOMIC);
+  var dropdown_op = block.getFieldValue('OP');
+  switch(dropdown_op){
+      case 'EQ':
+          dropdown_op = '=';
+          break;
+      case 'ADD':
+          dropdown_op = '+=';
+          break;
+      case 'SUB':
+          dropdown_op = '-=';
+          break;
+      case 'MULT':
+          dropdown_op = '*=';
+          break;
+      case 'DIVISION':
+          dropdown_op = '/=';
+          break;
+      case 'AMARI':
+          dropdown_op = '%=';
+          break;
+      case 'BEKI':
+          dropdown_op = '**=';
+          break;
+      default:
+          errorMessage("assingment_expressionブロックのテキスト変換において、以下のoperatorは定義されていません: " +
+            dropdown_op + "\n\n面倒くさくて実装していません。本当にごめんなさい。")
+  }
+  var value_val = Blockly.p5js.valueToCode(block, 'VAL', Blockly.p5js.ORDER_ATOMIC);
+  var code = variable_name + ' ' + dropdown_op + ' ' + value_val;
+  return code + ";\n";
+};
+
 Blockly.p5js['member_block'] = function(block) {
     var value_left = Blockly.p5js.valueToCode(block, 'LEFT', Blockly.p5js.ORDER_ATOMIC);
     var value_right = Blockly.p5js.valueToCode(block, 'RIGHT', Blockly.p5js.ORDER_ATOMIC);
@@ -115,8 +150,8 @@ Blockly.p5js['null_block'] = function(block) {
     return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
-Blockly.p5js['test_expression'] = function(block) {
-  var text_name = block.getFieldValue('NAME');
-  var code = text_name;
-  return [code, Blockly.p5js.ORDER_NONE];
-};
+// Blockly.p5js['test_expression'] = function(block) {
+//   var text_name = block.getFieldValue('NAME');
+//   var code = text_name;
+//   return [code, Blockly.p5js.ORDER_NONE];
+// };

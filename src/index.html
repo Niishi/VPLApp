@@ -40,6 +40,7 @@
   <script src="blockly/blocks/rect.js"></script>
   <script src="blockly/blocks/ellipse.js"></script>
   <script src="blockly/blocks/noFill.js"></script>
+  <script src="blockly/blocks/noStroke.js"></script>
   <script src="blockly/blocks/stroke1.js"></script>
   <script src="blockly/blocks/clear.js"></script>
   <script src="blockly/blocks/createCanvas.js"></script>
@@ -73,6 +74,7 @@
   <script src="blockly/generators/p5js/rect.js"></script>
   <script src="blockly/generators/p5js/ellipse.js"></script>
   <script src="blockly/generators/p5js/noFill.js"></script>
+  <script src="blockly/generators/p5js/noStroke.js"></script>
   <script src="blockly/generators/p5js/stroke1.js"></script>
   <script src="blockly/generators/p5js/clear.js"></script>
   <script src="blockly/generators/p5js/createCanvas.js"></script>
@@ -118,28 +120,27 @@
         <script>
             new p5();
         </script>
-        <!-- <script id="sketchjs" src="sketch.js"></script> -->
+        <script id="sketchjs" src="sketch.js"></script>
     </div>
 
 
-    <!-- 主なブロックエディタ -->
-  <div id="blocklyDiv"></div>
-
-  <div id="hiddenBlocklyDiv"></div>
 
 
-  <div id="input_area" class="box30">
-      <div class="box-title">テキストエディタ</div>
-        <div id="input_txt"></div>
-    </div>
-  <div id="sketch-container" class="box30">
-      <div class="box-title">実行画面</div>
-    <div id="sketch" width="500" height="500"></div>
-  </div>
+<div id="blocklyDiv"></div>
+<div id="hiddenBlocklyDiv"></div>
+<div id="input_area" class="box30">
+    <div class="box-title">テキストエディタ</div>
+    <div id="input_txt"></div>
+</div>
+<div id="sketch-container" class="box30">
+    <div class="box-title">実行画面</div>
+    <div id="sketch"></div>
+</div>
 
-  <input type="textArea" id="blockTextBox">
-
-
+<input type="textArea" id="blockTextBox">
+<input type="button" value="折りたたむ" onclick="collapseAllBlock();"/>
+<input type="button" value="展開する" onclick="expandAllBlock();"/>
+<canvas id="minimap_canvas" width="640" height="480"></canvas>
   <!-- <textarea rows="8" cols="80" id="output" readonly="readonly"></textarea> -->
 
   <!-- </div> -->
@@ -148,12 +149,13 @@
     <category name="p5js">
         <category name="Color">
             <category name="settings">
-                <block type="background"></block>
+                <block type="background_3"></block>
+                <block type="ellipse_4"></block>
                 <block type="fill"></block>
                 <block type="void_fill"></block>
                 <block type="stroke"></block>
                 <block type="noFill"></block>
-                <block type="noStroke"></block>
+                <block type="noStroke_0"></block>
                 <block type="colour_picker"></block>
                 <block type="variable_event"></block>
 
@@ -218,8 +220,8 @@
         <block type="setup"></block>
         <block type="draw"></block>
         <block type="size"></block>
-        <block type="rect"></block>
-        <block type="ellipse"></block>
+        <block type="rect_4"></block>
+        <block type="ellipse_4"></block>
         <block type="void_createCanvas"></block>
         <block type="Canvas_createCanvas"></block>
         <block type="expression_statement"></block>
@@ -232,7 +234,9 @@
   </xml>
 
   <script src="script.js"></script>
-  <!-- <script type="text/javascript" src="processing.min.js"></script>
-  <script type="text/javascript" src="processing-helper.js"></script> -->
+  <script src="myBlockly.js"></script>
+  <script src="blockGeneratorByCode.js"></script>
   <script src="editor.js"></script>
+
+  <script src="jikken.js"></script>
 </body>
