@@ -1,9 +1,4 @@
 function collapseAllBlock(){
-
-    // const topBlocks = workspace.getTopBlocks(true);
-    // for(topBlock of topBlocks){
-    //
-    // }
     const leafBlocks = getAllLeafBlock();
     for(leafBlock of leafBlocks){
         let parentBlock = leafBlock.getSurroundParent();
@@ -13,7 +8,6 @@ function collapseAllBlock(){
 }
 
 function collapseBlock(parent, level = 0){
-    // let block = parent.nextConnection === null ? parent.getChildren()[0];
     while(block !== null){
         block = block.getNextBlock();
     }
@@ -48,4 +42,8 @@ function expandAllBlock(){
     for(ablock of allBlocks){
         if(ablock.myCollapse) ablock.setCollapsed(false);
     }
+}
+
+function resetup(){
+    setup();
 }

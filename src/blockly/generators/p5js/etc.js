@@ -150,6 +150,12 @@ Blockly.p5js['null_block'] = function(block) {
     return [code, Blockly.p5js.ORDER_ATOMIC];
 };
 
+Blockly.p5js['leading_comment_block'] = function(block) {
+    var text_commnet = block.getFieldValue('commnet');
+    var code = '//' + text_commnet + '\n';
+    return code;
+};
+
 // Blockly.p5js['test_expression'] = function(block) {
 //   var text_name = block.getFieldValue('NAME');
 //   var code = text_name;

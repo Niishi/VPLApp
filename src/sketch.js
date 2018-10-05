@@ -1,19 +1,6 @@
-setup = function(){
-  var canvas = createCanvas(700, 600);
-  canvas.parent('sketch');
-};
-
-draw = function(){
-  background('#c0c0c0');
-  a = 10;
-};
+var x = 100;
 
 setup = function(){
-  var canvas = createCanvas(700, 600);
+  var canvas = createCanvas(700, 300);
   canvas.parent('sketch');
-};
-
-draw = function(){
-  background('#c0c0c0');
-  a = ;
 };

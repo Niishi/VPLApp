@@ -16,9 +16,10 @@ var currentWorkspace;
 function setCurrentWorkspace(workspace){
     currentWorkspace = workspace;
 }
-
+let cursorPosition = {row:0, column:0};
 function predictCode(errorCode){
     const tokens = esprima.tokenize(errorCode);
+    if(!tokens[0]) return null;
     switch (tokens[0].type) {
         case "Identifier":
             return predictFromIdentifier(tokens);
@@ -88,13 +89,12 @@ function isValidCode(code){
     }
 }
 
-function trimError(error){
-    console.log(error);
+function trimError(error) {
     const editor = getAceEditor();
     const editSession = editor.getSession();
     const document = editSession.getDocument();
-    firstLines = document.getLines(0,error.lineNumber-2);
-    lastLines = document.getLines(error.lineNumber, document.getLength()-1);
+    firstLines = document.getLines(0, error.lineNumber - 2);
+    lastLines = document.getLines(error.lineNumber, document.getLength() - 1);
     errorCode = document.getLine(error.lineNumber - 1).trim();
     fixCode = predictCode(errorCode);
     if(fixCode) lines = firstLines.concat([fixCode]).concat(lastLines);
@@ -115,12 +115,17 @@ function insertStr(str, index, insert) {
 
 function blockByCode(code, workspace, count=0){
     if(count > 10){
-        console.log("codeToBlock()が10回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
+        console.log("blockByCode()が10回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         return "error";
+    }
+    if(count === 0){
+        const editor = getAceEditor();
+        cursorPosition = editor.getCursorPosition();
     }
     setCurrentWorkspace(workspace);
     try {
-        var ast = esprima.parse(code, {tolerant: false, comment: true});    //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
+         //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
+        var ast = esprima.parse(code, {tolerant: false, comment: true});
     } catch (e) {
         const fixCode = predictCode(code);
         return blockByCode(fixCode, workspace, count+1);
@@ -137,12 +142,20 @@ function blockByCode(code, workspace, count=0){
 var blockY = 0;
 var blockX = 100;
 var blockMargin = 30;
+let firstProgram = "";
 function codeToBlock(program, count=0) {
     if(count > 10){
         console.log("codeToBlock()が10回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
+        editor.setValue(firstProgram,-1);
+        editor.moveCursorToPosition(cursorPosition);
         return;
     }
     if(!program) program = getAceEditor().getValue();
+    if(count === 0) {
+        firstProgram = program;
+        const editor = getAceEditor();
+        cursorPosition = editor.getCursorPosition();
+    }
     setCurrentWorkspace(workspace);
     try {
         const options = {
@@ -162,22 +175,22 @@ function codeToBlock(program, count=0) {
         console.error("構文エラー");
         return;
     }
-    let block = null;
+    let preBlock = null;
     for (statement of ast.body) {
         var newBlock = blockByStatement(statement);
         if(newBlock === null) continue;
-        if(block === null){
-            block = newBlock;
-            block.moveBy(blockX, blockY);
-            blockY += block.height;
+        if(preBlock === null){
+            preBlock = newBlock;
+            preBlock.moveBy(blockX, blockY);
+            blockY += preBlock.height;
         }else{
-            if(combineNextBlock(block, newBlock)){
-                blockY += block.height;
+            if(combineNextBlock(preBlock, newBlock)){
+                blockY += preBlock.height;
             }else{
+                blockY += preBlock.height + blockMargin;
                 newBlock.moveBy(blockX, blockY);
-                blockY += block.height + blockMargin;
             }
-            block = newBlock;
+            preBlock = newBlock;
         }
     }
 
@@ -192,57 +205,105 @@ var functionNameList = ["setup", "draw", 'mousePressed', 'mouseDragged',
                         'mouseClicked', 'mouseReleased'];
 
 function blockByStatement(statement) {
+    let firstCommentBlock = null;
+    let lastCommentBlock = null;
+    if(statement.leadingComments){
+        for(leadingComment of statement.leadingComments){
+            let block = createLeadingCommentBlock(leadingComment);
+            if(!firstBlock){
+                firstBlock = block;
+                lastBlock = block;
+            }else{
+                combineNextBlock(lastBlock, block);
+                lastBlock = block;
+            }
+        }
+    }
+    let block = null;
     switch(statement.type){
         case 'BlockStatement':
-            return blockStatementBlock(statement);
+            block = blockStatementBlock(statement);
+            break;
         case 'BreakStatement':
-            return breakStatementBlock(statement);
+            block = breakStatementBlock(statement);
+            break;
         case 'ContinueStatement':
-            return continueStatementBlock(statement);
+            block = continueStatementBlock(statement);
+            break;
         case 'ClassDeclaration':
-            return classDeclarationBlock(statement);
+            block = classDeclarationBlock(statement);
+            break;
         case 'ClassBody':
-            return classBodyBlock(statement);
+            block = classBodyBlock(statement);
+            break;
         case 'DoWhileStatement':
-            return doWhileStatementBlock(statement);
+            block = doWhileStatementBlock(statement);
+            break;
         case 'EmptyStatement':
-            return emptyStatementBlock(statement);
+            block = emptyStatementBlock(statement);
+            break;
         case 'ExpressionStatement':
-            return expressionStatementBlock(statement);
+            block = expressionStatementBlock(statement);
+            break;
         case 'ForStatement':
-            return forStatementBlock(statement);
+            block = forStatementBlock(statement);
+            break;
         case 'ForInStatement':
-            return forInStatementBlock(statement);
+            block = forInStatementBlock(statement);
+            break;
         case 'ForOfStatement':
-            return forOfStatementBlock(statement);
+            block = forOfStatementBlock(statement);
+            break;
         case 'FunctionDeclaration':
-            return functionDeclarationBlock(statement);
+            block = functionDeclarationBlock(statement);
+            break;
         case 'IfStatement':
-            return ifStatementBlock(statement);
+            block = ifStatementBlock(statement);
+            break;
         case 'MethodDefinition':
-            return methodDefinitionBlock(statement);
+            block = methodDefinitionBlock(statement);
+            break;
         case 'ReturnStatement':
-            return returnStatementBlock(statement);
+            block = returnStatementBlock(statement);
+            break;
         case 'SwitchCase':
-            return switchCaseBlock(statement);
+            block = switchCaseBlock(statement);
+            break;
         case 'SwitchStatement':
-            return switchStatementBlock(statement);
+            block = switchStatementBlock(statement);
+            break;
         case 'ThrowStatement':
-            return throwStatementBlock(statement);
+            block = throwStatementBlock(statement);
+            break;
         case 'TryStatement':
-            return tryStatementBlock(statement);
+            block = tryStatementBlock(statement);
+            break;
         case 'VariableDeclaration':
-            return variableDeclarationBlock(statement);
+            block = variableDeclarationBlock(statement);
+            break;
         case 'VariableDeclarator':
-            return variableDeclaratorBlock(statement);
+            block = variableDeclaratorBlock(statement);
+            break;
         case 'WhileStatement':
-            return whileStatementBlock(statement);
+            block = whileStatementBlock(statement);
+            break;
         default:
-            errorMessage("blockByStatementでエラー。存在しないstatement=>" + statement.type, statement);
+            errorMessage("blockByStatementでエラー。存在しないstatement=>" +
+                statement.type, statement);
     }
+    if(lastCommentBlock) combineNextBlock(lastCommentBlock, block);
+    if(firstCommentBlock) return firstCommentBlock;
+    else return block;
+}
+
+function createLeadingCommentBlock(comment){
+    const block = createBlock("leading_comment_block");
+    block.getField("comment").setValue(comment.value);
+    return block;
 }
 /**
- * statement列からブロック列を生成しその先頭のブロックだけを返す。生成されたブロックは順番通りに連結されている。nullを返すおそれがある。
+ * statement列からブロック列を生成しその先頭のブロックだけを返す。
+ * 生成されたブロックは順番通りに連結されている。nullを返すおそれがある。
  * @param  {json} statement 命令列
  * @return {Blockly.BlockSvg} 生成されたブロック列の先頭ブロック
  */

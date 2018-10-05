@@ -170,6 +170,19 @@ Blockly.Blocks['null_block'] = {
     }
 };
 
+Blockly.Blocks['leading_comment_block'] = {
+    init: function() {
+        this.appendDummyInput()
+            .appendField("//")
+            .appendField(new Blockly.FieldTextInput("comment"), "commnet");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(180);
+        this.setTooltip("");
+        this.setHelpUrl("");
+    }
+};
+
 // Blockly.Blocks['test_expression'] = {
 //     init: function() {
 //         this.appendDummyInput()

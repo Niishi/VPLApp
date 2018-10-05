@@ -108,6 +108,7 @@ function run() {
     saveCode();
     var codeText = getAceEditor().getValue();
     eval(codeText);
+    setup();
 }
 
 function getPropertyValue(elementName, propertyName){

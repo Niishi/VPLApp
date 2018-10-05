@@ -2,9 +2,9 @@
   "name": "VPLEditor",
   "version": "0.0.1",
   "main": "main.js",
-  "author": "Yuya Yamanashi",
+  "author": "Niishi",
   "devDependencies": {
-    "electron": "1.4.15"
+    "electron": "^2.0.0"
   },
   "dependencies": {
     "electron-prompt": "^0.5.0",
