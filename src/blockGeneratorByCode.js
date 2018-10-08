@@ -125,7 +125,8 @@ function blockByCode(code, workspace, count=0){
     setCurrentWorkspace(workspace);
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
-        var ast = esprima.parse(code, {tolerant: false, comment: true});
+        var ast = esprima.parseModule(code, {tolerant: false, comment: true});
+        console.log(ast);
     } catch (e) {
         const fixCode = predictCode(code);
         return blockByCode(fixCode, workspace, count+1);
@@ -164,7 +165,8 @@ function codeToBlock(program, count=0) {
             tolerant: false
         };
 
-        var ast = esprima.parse(program, options);
+        var ast = esprima.parseModule(program, options);
+        console.log(ast);
         currentWorkspace.clear();
 
     } catch (e) {
@@ -207,8 +209,8 @@ var functionNameList = ["setup", "draw", 'mousePressed', 'mouseDragged',
 function blockByStatement(statement) {
     let firstCommentBlock = null;
     let lastCommentBlock = null;
-    if(statement.leadingComments){
-        for(leadingComment of statement.leadingComments){
+    if(statement.comments){
+        for(leadingComment of statement.comments){
             let block = createLeadingCommentBlock(leadingComment);
             if(!firstBlock){
                 firstBlock = block;
