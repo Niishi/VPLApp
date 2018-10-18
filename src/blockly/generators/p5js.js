@@ -43,7 +43,7 @@ Blockly.p5js = new Blockly.Generator('p5js');
  * @private
  */
 Blockly.p5js.addReservedWords();
-// //NOTE: lengthを以下から取り除きました
+// //NOTE: lengthを以下から取り除きました!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // Blockly.p5js.addReservedWords(
 //     'Blockly,' +  // In case JS is evaled in the current window.
 //     // https://developer.mozilla.org/en/p5js/Reference/Reserved_Words

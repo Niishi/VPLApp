@@ -1,4 +1,10 @@
+const {BrowserWindow, dialog} = require('electron').remote;
+const fs = require('fs');
+const ipc = require('electron').ipcRenderer;
+var Search = require('ace/search').Search;
+var Range = require('ace/range').Range;
 
+let currentFilePath = "";
 var blocklyDiv = document.getElementById("blocklyDiv");
 var workspace = Blockly.inject(blocklyDiv, {
     toolbox: document.getElementById('toolbox'),
@@ -203,8 +209,7 @@ document.onkeydown  = function (e) {
     }
 }
 
-var Search = require('ace/search').Search;
-var Range = require('ace/range').Range;
+
 var searchOption = {
     needle : "function",
     backwards : false,
@@ -294,7 +299,8 @@ function getSelectedBlock() {
 
 function saveCode() {
     var codeText = getAceEditor().getValue();
-    saveFile("./src/sketch.js", codeText);
+    // saveFile("./src/sketch.js", codeText);
+    saveFile(currentFilePath, codeText);
 }
 
 /**
@@ -310,16 +316,44 @@ function saveFile(path, data) {
 }
 
 
-const fs = require('fs');
-const ipc = require('electron').ipcRenderer;
-function loadScript(path, callback) {
-    $('#sketchjs').remove();
-    $('#sketchjs-container').append('<script id="sketchjs" src="sketch.js"></script>');
-    callback();
+
+/**
+ * ファイルを開きます。
+ */
+function openLoadFile() {
+  const win = BrowserWindow.getFocusedWindow();
+
+  dialog.showOpenDialog(
+    win,
+    // どんなダイアログを出すかを指定するプロパティ
+    {
+      properties: ['openFile'],
+      filters: [
+        {
+          name: 'Documents',
+          extensions: ['js']
+        }
+      ]
+    },
+    // [ファイル選択]ダイアログが閉じられた後のコールバック関数
+    (fileNames) => {
+      if (fileNames) {
+          console.log(fileNames[0]);
+        readFile(fileNames[0]);
+      }
+    });
 }
+
+
+// function loadScript(path, callback) {
+//     $('#sketchjs').remove();
+//     $('#sketchjs-container').append('<script id="sketchjs" src="sketch.js"></script>');
+//     callback();
+// }
 
 readFile("./src/sketch.js");
 function readFile(path) {
+    currentFilePath = path;
     fs.readFile(path, function(error, buffer) {
         if (error != null) {
             alert("error : " + error);
@@ -337,15 +371,8 @@ function getAceEditor() {
 }
 
 function runCode() {
-    // saveCode();
     $("#sketch").remove();
     $("#sketch-container").append('<div id="sketch" width="500" height="500"></div>');
-
-    // $("#sketch").append('<canvas id="defaultCanvas0" style="width: 500px; height: 500px;" width="500" height="500"></canvas>');
-    // $("#sketchjs").remove();
-    // $("#sketchjs-container").append('<script id="sketchjs" src="sketch.js"></script>');
-    // draw();
-
 }
 
 function setBlobUrl(id, content) {

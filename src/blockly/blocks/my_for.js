@@ -15,7 +15,7 @@ Blockly.Blocks['my_for'] = {
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
-    this.setColour(120);
+    this.setColour(90,0.5);
  this.setTooltip("");
  this.setHelpUrl("");
   }
@@ -37,7 +37,7 @@ Blockly.Blocks['for_decl'] = {
         this.setInputsInline(true);
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
-        this.setColour(120);
+        this.setColour(90,0.5);
         this.setTooltip("");
         this.setHelpUrl("");
     }
