@@ -19,18 +19,32 @@ function setCurrentWorkspace(workspace){
 let cursorPosition = {row:0, column:0};
 function predictCode(errorCode){
     const tokens = esprima.tokenize(errorCode);
+    console.log(tokens);
     if(!tokens[0]) return null;
     switch (tokens[0].type) {
-        case "Identifier":
-            return predictFromIdentifier(tokens);
+        // case "Identifier":
+        //     return predictFromIdentifier(tokens);
         case "Keyword":
-            if(tokens[0].value === "let" || tokens[0].value === "const" || tokens[0].value === "var"){
+            if( tokens[0].value === "let" || tokens[0].value === "const" ||
+                tokens[0].value === "var"){
                 return predictAssignment(tokens);
             }
-        default:
-            return null;
-
+        // default:
+            // return null;
     }
+    let i = 0;
+    let code = "";
+    while (i < tokens.length-1) {
+        if(tokens[i].type === "Identifier" && tokens[i+1].value === "("){
+            const result = predictCallExpression(tokens, i);
+            code += result.code;
+            i = result.index;
+        } else {
+            code += tokens[i].value;
+        }
+        i++;
+    }
+    return code;
 }
 
 function predictAssignment(tokens){
@@ -40,6 +54,57 @@ function predictAssignment(tokens){
         code += ' ' + tokens[index].value + '=_;'
     }
     return code;
+}
+
+/**
+ * 指定されたindexの前までのトークンをコードに変換して返す
+ * @param  {[type]} tokens [description]
+ * @param  {[type]} index  [description]
+ * @return {[type]}        [description]
+ */
+function getCode(tokens, index){
+    let code = "";
+    for(let i = 0; i < index; i++){
+        code += tokens[i].value;
+    }
+    return code;
+}
+
+function predictExpression(code){
+
+}
+
+function predictCallExpression(tokens, index){
+    let code = tokens[index].value + tokens[index+1].value;
+    index += 2;
+    if (tokens.length <= index) return code + ")";
+    else {
+        let partOfCode = "";
+        while(index < tokens.length){
+            if(tokens[index].value === ','){
+                if(partOfCode === ''){
+                    code += '_,';
+                }else{
+                    if(isValidCode(partOfCode)){
+                        code += partOfCode + ',';
+                    }else{
+                        code += predictExpression(partOfCode);
+                    }
+                    partOfCode = "";
+                }
+            }else if(tokens[index].value === ')'){
+                if (partOfCode !== "" && isValidCode(partOfCode)) {
+                    code += partOfCode + ')';
+                    partOfCode = "";
+                } else code += ')';
+                break;
+            } else {
+                partOfCode += tokens[index].value;
+            }
+            index++;
+        }
+        return {"code":code, "index":index};
+    }
 }
 
 function predictFromIdentifier(tokens){
@@ -164,17 +229,14 @@ function codeToBlock(program, count=0) {
             comment: true,
             tolerant: false
         };
-
         var ast = esprima.parseModule(program, options);
         console.log(ast);
         currentWorkspace.clear();
-
     } catch (e) {
         console.log(e);
         const fixCode = trimError(e);
         editor.setValue(fixCode);
         codeToBlock(fixCode, count+1);
-        console.error("構文エラー");
         return;
     }
     let preBlock = null;
