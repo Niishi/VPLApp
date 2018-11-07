@@ -1,3 +1,2 @@
-a.x.a(_, _, _);
-a._;
-a = 0;
+setup = function(){
+};

@@ -511,10 +511,10 @@ WithToken       = "with"       !IdentifierPart
 /* Skipped */
 
 __
-  = (WhiteSpace / LineTerminatorSequence / Comment)*
+  = code:((WhiteSpace / LineTerminatorSequence / Comment)*) {return code.join("")}
 
 _
-  = (WhiteSpace / MultiLineCommentNoLineTerminator)*
+  = code:((WhiteSpace / MultiLineCommentNoLineTerminator)*) {return code.join("")}
 
 /* Automatic Semicolon Insertion */
 
@@ -653,7 +653,7 @@ MemberExpression
       / FunctionExpression
       / NewToken __ callee:MemberExpression __ args:Arguments {
           return "new " + callee + "(" + args + ")";
-          // return { type: "NewExpression", callee: callee, arguments: args };
+          // return { type: "NewExpression", callee: callee, argumFents: args };
         }
     )
     tail:(
@@ -687,15 +687,13 @@ NewExpression
 
 CallExpression
   = head:(
-      callee:MemberExpression __ args:Arguments {
-          return callee + args;
-        // return { type: "CallExpression", callee: callee, arguments: args };
+      code:(callee:MemberExpression __ args:Arguments) {
+          return code.join("");
       }
     )
     tail:(
         __ args:Arguments {
             return args;
-          // return { type: "CallExpression", arguments: args };
         }
       / __ "[" __ property:Expression __ "]" {
           return "[" + property + "]";
@@ -723,22 +721,31 @@ CallExpression
     }
 
 Arguments
-  = "(" __ args:(ArgumentList __)? ")" {
-      return optionalList(extractOptional(args, 0));
+  = code:("(" __ args:(ArgumentList __)? ")") {
+      return code.join("");
     }
 
 ArgumentList
+    = head:AssignmentExpression __ "," __ tail:ArgumentList {return head + "," + tail;}
+    / __ "," tail:ArgumentList {return "_," + tail;}
+    / head:AssignmentExpression {return head;}
+    / __ {return "_";}
+  /* = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
+      return buildList(head, tail, 3);
+    } */
+
+/* ArgumentList
   = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
       return buildList(head, tail, 3);
-    }
+    } */
 
 LeftHandSideExpression
   = CallExpression
   / NewExpression
 
 PostfixExpression
-  = argument:LeftHandSideExpression _ operator:PostfixOperator {
-      return LeftHandSideExpression + operator;
+  = code:$(argument:LeftHandSideExpression _ operator:PostfixOperator) {
+      return code;
       // return {
       //   type:     "UpdateExpression",
       //   operator: operator,
@@ -945,11 +952,11 @@ ConditionalExpressionNoIn
   / LogicalORExpressionNoIn
 
 AssignmentExpression
-  = left:LeftHandSideExpression __
+  = code:$(left:LeftHandSideExpression __
     "=" !"=" __
-    right:AssignmentExpression
+    right:AssignmentExpression)
     {
-        return left + "=" + right;
+        return code;
       // return {
       //   type:     "AssignmentExpression",
       //   operator: "=",
@@ -957,11 +964,11 @@ AssignmentExpression
       //   right:    right
       // };
     }
-  / left:LeftHandSideExpression __
+  / code:$(left:LeftHandSideExpression __
     operator:AssignmentOperator __
-    right:AssignmentExpression
+    right:AssignmentExpression)
     {
-        return left + operator + right;
+        return code;
       // return {
       //   type:     "AssignmentExpression",
       //   operator: operator,
@@ -972,11 +979,11 @@ AssignmentExpression
   / ConditionalExpression
 
 AssignmentExpressionNoIn
-  = left:LeftHandSideExpression __
+  = code:$(left:LeftHandSideExpression __
     "=" !"=" __
-    right:AssignmentExpressionNoIn
+    right:AssignmentExpressionNoIn)
     {
-        return left + "=" + right;
+        return code;
       // return {
       //   type:     "AssignmentExpression",
       //   operator: "=",
@@ -984,11 +991,11 @@ AssignmentExpressionNoIn
       //   right:    right
       // };
     }
-  / left:LeftHandSideExpression __
+  / code:$(left:LeftHandSideExpression __
     operator:AssignmentOperator __
-    right:AssignmentExpressionNoIn
+    right:AssignmentExpressionNoIn)
     {
-        return left + operator + right;
+        return code;
       // return {
       //   type:     "AssignmentExpression",
       //   operator: operator,
@@ -1013,9 +1020,7 @@ AssignmentOperator
 
 Expression
   = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
-      return tail.length > 0
-        ? buildList(head, tail, 3)
-        : head;
+      return head + tail.join("");
       // return tail.length > 0
       //   ? { type: "SequenceExpression", expressions: buildList(head, tail, 3) }
       //   : head;
@@ -1023,9 +1028,7 @@ Expression
 
 ExpressionNoIn
   = head:AssignmentExpressionNoIn tail:(__ "," __ AssignmentExpressionNoIn)* {
-      return tail.length > 0
-        ? buildList(head, tail, 3)
-        : head;
+      return head + tail.join("");
       // return tail.length > 0
       //   ? { type: "SequenceExpression", expressions: buildList(head, tail, 3) }
       //   : head;
@@ -1051,8 +1054,8 @@ Statement
   / DebuggerStatement
 
 Block
-  = code:("{" __ body:(StatementList __)? "}") {
-    return code.join("");
+  = code:$("{" __ body:(StatementList __)? "}") {
+    return code;
   }
   /* = "{" __ body:(StatementList __)? "}" {
       return {
@@ -1065,8 +1068,8 @@ StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
 VariableStatement
-  = code:(VarToken __ declarations:VariableDeclarationList EOS) {
-    return code.join("");
+  = code:$(VarToken __ declarations:VariableDeclarationList EOS) {
+    return code;
   }
   /* = VarToken __ declarations:VariableDeclarationList EOS {
       return {
@@ -1086,8 +1089,8 @@ VariableDeclarationListNoIn
     }
 
 VariableDeclaration
-  = code:(id:Identifier init:(__ Initialiser)?) {
-      return code.join("");
+  = code:$(id:Identifier init:(__ Initialiser)?) {
+      return code;
       // return {
       //   type: "VariableDeclarator",
       //   id:   id,
@@ -1096,7 +1099,7 @@ VariableDeclaration
     }
 
 VariableDeclarationNoIn
-  = code:(id:Identifier init:(__ InitialiserNoIn)?) {
+  = code:$(id:Identifier init:(__ InitialiserNoIn)?) {
       // return {
       //   type: "VariableDeclarator",
       //   id:   id,
@@ -1107,38 +1110,32 @@ VariableDeclarationNoIn
 
 Initialiser
 /* = "=" !"=" __ expression:AssignmentExpression { return expression; } */
-  = code:("=" !"=" __ expression:AssignmentExpression) { return code.join(""); }
+  = code:$("=" !"=" __ expression:AssignmentExpression) { return code; }
 
 InitialiserNoIn
 /* = "=" !"=" __ expression:AssignmentExpressionNoIn { return expression; } */
-  = code:("=" !"=" __ expression:AssignmentExpressionNoIn) { return code.join(""); }
+  = code:$("=" !"=" __ expression:AssignmentExpressionNoIn) { return code; }
 
 EmptyStatement
 = ";" { return ";"; }
   /* = ";" { return { type: "EmptyStatement" }; } */
 
 ExpressionStatement
-  = !("{" / FunctionToken) code:(expression:Expression EOS) {
-    return code.join("");
+  = !("{" / FunctionToken) expression:Expression EOS{
+    return expression + ";";
   }
-  /* = !("{" / FunctionToken) expression:Expression EOS {
-      return {
-        type:       "ExpressionStatement",
-        expression: expression
-      };
-    } */
 
 IfStatement
-  = code:(IfToken __ "(" __ test:Expression __ ")" __
+  = code:$(IfToken __ "(" __ test:Expression __ ")" __
       consequent:Statement __
       ElseToken __
       alternate:Statement)
   {
-    return code.join("");
+    return code;
   }
-/ code:(IfToken __ "(" __ test:Expression __ ")" __
+/ code:$(IfToken __ "(" __ test:Expression __ ")" __
   consequent:Statement) {
-    return code.join("");
+    return code;
   }
   /* = IfToken __ "(" __ test:Expression __ ")" __
     consequent:Statement __
@@ -1163,14 +1160,14 @@ IfStatement
     } */
 
 IterationStatement
-  = code:(DoToken __
+  = code:$(DoToken __
     body:Statement __
     WhileToken __ "(" __ test:Expression __ ")" EOS)
-    { return code.join(""); }
-  / code:(WhileToken __ "(" __ test:Expression __ ")" __
+    { return code; }
+  / code:$(WhileToken __ "(" __ test:Expression __ ")" __
     body:Statement)
-    { return code.join(""); }
-  / code:(ForToken __
+    { return code; }
+  / code:$(ForToken __
     "(" __
     init:(ExpressionNoIn __)? ";" __
     test:(Expression __)? ";" __
@@ -1178,9 +1175,9 @@ IterationStatement
     ")" __
     body:Statement)
     {
-      return code.join("");
+      return code;
     }
-  / code:(ForToken __
+  / code:$(ForToken __
     "(" __
     VarToken __ declarations:VariableDeclarationListNoIn __ ";" __
     test:(Expression __)? ";" __
@@ -1188,9 +1185,9 @@ IterationStatement
     ")" __
     body:Statement)
     {
-      return code.join("");
+      return code;
     }
-  / code:(ForToken __
+  / code:$(ForToken __
     "(" __
     left:LeftHandSideExpression __
     InToken __
@@ -1198,9 +1195,9 @@ IterationStatement
     ")" __
     body:Statement)
     {
-      return code.join("");
+      return code;
     }
-  / code:(ForToken __
+  / code:$(ForToken __
     "(" __
     VarToken __ declarations:VariableDeclarationListNoIn __
     InToken __
@@ -1208,187 +1205,139 @@ IterationStatement
     ")" __
     body:Statement)
     {
-      return code.join("");
+      return code;
     }
 
 ContinueStatement
-  = code:(ContinueToken EOS) {
-      return code.join("");
+  = code:$(ContinueToken EOS) {
+      return code;
     }
-  / code:(ContinueToken _ label:Identifier EOS) {
-      return code.join("");
+  / code:$(ContinueToken _ label:Identifier EOS) {
+      return code;
     }
 
 BreakStatement
-  = BreakToken EOS {
-      return { type: "BreakStatement", label: null };
+  = code:$(BreakToken EOS) {
+      return code;
     }
-  / BreakToken _ label:Identifier EOS {
-      return { type: "BreakStatement", label: label };
+  / code:$(BreakToken _ label:Identifier EOS) {
+      return code;
     }
 
 ReturnStatement
-  = ReturnToken EOS {
-      return { type: "ReturnStatement", argument: null };
+  = code:$(ReturnToken EOS) {
+      return code;
     }
-  / ReturnToken _ argument:Expression EOS {
-      return { type: "ReturnStatement", argument: argument };
+  / code:$(ReturnToken _ argument:Expression EOS) {
+      return code;
     }
 
 WithStatement
-  = WithToken __ "(" __ object:Expression __ ")" __
-    body:Statement
-    { return { type: "WithStatement", object: object, body: body }; }
+  = code:$(WithToken __ "(" __ object:Expression __ ")" __
+    body:Statement)
+    { return code; }
 
 SwitchStatement
-  = SwitchToken __ "(" __ discriminant:Expression __ ")" __
-    cases:CaseBlock
+  = code:$(SwitchToken __ "(" __ discriminant:Expression __ ")" __
+    cases:CaseBlock)
     {
-      return {
-        type:         "SwitchStatement",
-        discriminant: discriminant,
-        cases:        cases
-      };
+      return code;
     }
 
 CaseBlock
-  = "{" __ clauses:(CaseClauses __)? "}" {
-      return optionalList(extractOptional(clauses, 0));
+  = code:$("{" __ clauses:(CaseClauses __)? "}") {
+      return code;
     }
-  / "{" __
+  / code:$("{" __
     before:(CaseClauses __)?
     default_:DefaultClause __
-    after:(CaseClauses __)? "}"
+    after:(CaseClauses __)? "}")
     {
-      return optionalList(extractOptional(before, 0))
-        .concat(default_)
-        .concat(optionalList(extractOptional(after, 0)));
+      return code;
     }
 
 CaseClauses
-  = head:CaseClause tail:(__ CaseClause)* { return buildList(head, tail, 1); }
+  = code:$(head:CaseClause tail:(__ CaseClause)*) { return code; }
 
 CaseClause
-  = CaseToken __ test:Expression __ ":" consequent:(__ StatementList)? {
-      return {
-        type:       "SwitchCase",
-        test:       test,
-        consequent: optionalList(extractOptional(consequent, 1))
-      };
+  = code:$(CaseToken __ test:Expression __ ":" consequent:(__ StatementList)?) {
+      return code;
     }
 
 DefaultClause
-  = DefaultToken __ ":" consequent:(__ StatementList)? {
-      return {
-        type:       "SwitchCase",
-        test:       null,
-        consequent: optionalList(extractOptional(consequent, 1))
-      };
+  = code:$(DefaultToken __ ":" consequent:(__ StatementList)?) {
+      return code;
     }
 
 LabelledStatement
-  = label:Identifier __ ":" __ body:Statement {
-      return { type: "LabeledStatement", label: label, body: body };
+  = code:$(label:Identifier __ ":" __ body:Statement) {
+      return code;
     }
 
 ThrowStatement
-  = ThrowToken _ argument:Expression EOS {
-      return { type: "ThrowStatement", argument: argument };
+  = code:$(ThrowToken _ argument:Expression EOS) {
+      return code;
     }
 
 TryStatement
-  = TryToken __ block:Block __ handler:Catch __ finalizer:Finally {
-      return {
-        type:      "TryStatement",
-        block:     block,
-        handler:   handler,
-        finalizer: finalizer
-      };
+  = code:$(TryToken __ block:Block __ handler:Catch __ finalizer:Finally) {
+      return code;
     }
-  / TryToken __ block:Block __ handler:Catch {
-      return {
-        type:      "TryStatement",
-        block:     block,
-        handler:   handler,
-        finalizer: null
-      };
+  / code:$(TryToken __ block:Block __ handler:Catch) {
+      return code;
     }
-  / TryToken __ block:Block __ finalizer:Finally {
-      return {
-        type:      "TryStatement",
-        block:     block,
-        handler:   null,
-        finalizer: finalizer
-      };
+  / code:$(TryToken __ block:Block __ finalizer:Finally) {
+      return code;
     }
 
 Catch
-  = CatchToken __ "(" __ param:Identifier __ ")" __ body:Block {
-      return {
-        type:  "CatchClause",
-        param: param,
-        body:  body
-      };
+  = code:$(CatchToken __ "(" __ param:Identifier __ ")" __ body:Block) {
+      return code;
     }
 
 Finally
-  = FinallyToken __ block:Block { return block; }
+  = code:$(FinallyToken __ block:Block) { return code; }
 
 DebuggerStatement
-  = DebuggerToken EOS { return { type: "DebuggerStatement" }; }
+  = code:$(DebuggerToken EOS) { return code; }
 
 /* ----- A.5 Functions and Programs ----- */
 
 FunctionDeclaration
-  = FunctionToken __ id:Identifier __
+  = code:$(FunctionToken __ id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" __
-    "{" __ body:FunctionBody __ "}"
+    "{" __ body:FunctionBody __ "}")
     {
-      return {
-        type:   "FunctionDeclaration",
-        id:     id,
-        params: optionalList(extractOptional(params, 0)),
-        body:   body
-      };
+      return code;
     }
 
 FunctionExpression
-  = FunctionToken __ id:(Identifier __)?
+  = code:$(FunctionToken __ id:(Identifier __)?
     "(" __ params:(FormalParameterList __)? ")" __
-    "{" __ body:FunctionBody __ "}"
+    "{" __ body:FunctionBody __ "}")
     {
-      return {
-        type:   "FunctionExpression",
-        id:     extractOptional(id, 0),
-        params: optionalList(extractOptional(params, 0)),
-        body:   body
-      };
+      return code;
     }
 
 FormalParameterList
-  = head:Identifier tail:(__ "," __ Identifier)* {
-      return buildList(head, tail, 3);
+  = code:$(head:Identifier tail:(__ "," __ Identifier)*) {
+      return code;
     }
 
 FunctionBody
   = body:SourceElements? {
-      return {
-        type: "BlockStatement",
-        body: optionalList(body)
-      };
+      return body;
     }
 
 Program
   = body:SourceElements? {
-      return {
-        type: "Program",
-        body: optionalList(body)
-      };
+      return body;
     }
 
 SourceElements
   = head:SourceElement tail:(__ SourceElement)* {
-      return buildList(head, tail, 1);
+      return head + tail.join("");
+      // return head + tail.join("");
     }
 
 SourceElement
