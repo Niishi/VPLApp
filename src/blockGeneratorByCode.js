@@ -71,7 +71,20 @@ function getCode(tokens, index){
 }
 
 function predictExpression(code){
-
+    const tokens = esprima.tokenize(code);
+    let i = 0;
+    let code = "";
+    while (i < tokens.length-1) {
+        if(tokens[i].type === "Identifier" && tokens[i+1].value === "("){
+            const result = predictCallExpression(tokens, i);
+            code += result.code;
+            i = result.index;
+        } else {
+            code += tokens[i].value;
+        }
+        i++;
+    }
+    return code;
 }
 
 function predictCallExpression(tokens, index){
@@ -154,6 +167,13 @@ function isValidCode(code){
     }
 }
 
+
+function createParser(){
+    peg = require("pegjs");
+    return peg.generate(fs.readFileSync("./pegjs_test/error_correction.pegjs").toString());
+
+}
+const parser = createParser();
 function trimError(error) {
     const editor = getAceEditor();
     const editSession = editor.getSession();
@@ -161,7 +181,8 @@ function trimError(error) {
     firstLines = document.getLines(0, error.lineNumber - 2);
     lastLines = document.getLines(error.lineNumber, document.getLength() - 1);
     errorCode = document.getLine(error.lineNumber - 1).trim();
-    fixCode = predictCode(errorCode);
+    // fixCode = predictCode(errorCode);
+    fixCode = parser.parse(errorCode);
     if(fixCode) lines = firstLines.concat([fixCode]).concat(lastLines);
     else lines = firstLines.concat(["_error('" + errorCode + "');"]).concat(lastLines);
     return lines.join('\n');
@@ -191,9 +212,8 @@ function blockByCode(code, workspace, count=0){
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
         var ast = esprima.parseModule(code, {tolerant: false, comment: true});
-        console.log(ast);
     } catch (e) {
-        const fixCode = predictCode(code);
+        const fixCode = parser.parse(code);
         return blockByCode(fixCode, workspace, count+1);
         return "error";
     }
@@ -208,17 +228,17 @@ function blockByCode(code, workspace, count=0){
 var blockY = 0;
 var blockX = 100;
 var blockMargin = 30;
-let firstProgram = "";
+let firstProgram1 = "";
 function codeToBlock(program, count=0) {
     if(count > 10){
         console.log("codeToBlock()が10回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
-        editor.setValue(firstProgram,-1);
+        editor.setValue(firstProgram1,-1);
         editor.moveCursorToPosition(cursorPosition);
         return;
     }
     if(!program) program = getAceEditor().getValue();
     if(count === 0) {
-        firstProgram = program;
+        firstProgram1 = program;
         const editor = getAceEditor();
         cursorPosition = editor.getCursorPosition();
     }
@@ -230,7 +250,6 @@ function codeToBlock(program, count=0) {
             tolerant: false
         };
         var ast = esprima.parseModule(program, options);
-        console.log(ast);
         currentWorkspace.clear();
     } catch (e) {
         console.log(e);
