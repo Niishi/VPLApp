@@ -150,12 +150,8 @@ Identifier
   = !ReservedWord name:IdentifierName { return name; }
 
 IdentifierName "identifier"
-  = head:IdentifierStart tail:IdentifierPart* {
-      return head + tail.join("");
-      // return {
-      //   type: "Identifier",
-      //   name: head + tail.join("")
-      // };
+  = code:$(head:IdentifierStart tail:IdentifierPart*) {
+      return code;
     }
 
 IdentifierStart
