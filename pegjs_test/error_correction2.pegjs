@@ -518,7 +518,7 @@ EOS
   = code:(__ ";") {return code.join("");}
   / _ SingleLineComment? LineTerminatorSequence
   / _ &"}"
-  / __ EOF
+  / __ EOF {return "";}
 
 EOF
   = !.
@@ -664,14 +664,6 @@ MemberExpression
     )*
     {
         return head + tail.join("");
-      // return buildTree(head, tail, function(result, element) {
-      //   return {
-      //     type:     "MemberExpression",
-      //     object:   result,
-      //     property: element.property,
-      //     computed: element.computed
-      //   };
-      // });
     }
 
 NewExpression
@@ -723,7 +715,7 @@ Arguments
     }
 
 ArgumentList
-    = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code;}
+    = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
     / __ "," tail:ArgumentList {return "_," + tail;}
     / head:AssignmentExpression {return head;}
     / __ {return "_";}
@@ -945,19 +937,13 @@ AssignmentExpression
     "=" !"=" __
     right:AssignmentExpression)
     {
-        return code;
-      // return {
-      //   type:     "AssignmentExpression",
-      //   operator: "=",
-      //   left:     left,
-      //   right:    right
-      // };
+        return code.join("");
     }
   / code:(left:LeftHandSideExpression __
     operator:AssignmentOperator __
     right:AssignmentExpression)
     {
-        return code;
+        return code.join("");
       // return {
       //   type:     "AssignmentExpression",
       //   operator: operator,
@@ -965,6 +951,18 @@ AssignmentExpression
       //   right:    right
       // };
     }
+  / __ "=" !"=" __ right:AssignmentExpression
+  {
+      return "_" + "=" + right;
+  }
+  / left:LeftHandSideExpression __ "="!"=" __
+  {
+      return left + "=" + "_";
+  }
+  / __ "=" !"=" __
+  {
+      return "_" + "=" + "_";
+  }
   / ConditionalExpression
 
 AssignmentExpressionNoIn
