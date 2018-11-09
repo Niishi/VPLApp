@@ -519,7 +519,7 @@ _
 /* Automatic Semicolon Insertion */
 
 EOS
-  = __ ";"
+  = code:(__ ";") {return code.join("");}
   / _ SingleLineComment? LineTerminatorSequence
   / _ &"}"
   / __ EOF
@@ -713,11 +713,12 @@ CallExpression
         }
     )*
     {
-      return buildTree(head, tail, function(result, element) {
-        element[TYPES_TO_PROPERTY_NAMES[element.type]] = result;
-
-        return element;
-      });
+        return head + tail.join("");
+      // return buildTree(head, tail, function(result, element) {
+      //   element[TYPES_TO_PROPERTY_NAMES[element.type]] = result;
+      //
+      //   return element;
+      // });
     }
 
 Arguments
@@ -726,26 +727,18 @@ Arguments
     }
 
 ArgumentList
-    = head:AssignmentExpression __ "," __ tail:ArgumentList {return head + "," + tail;}
+    = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code;}
     / __ "," tail:ArgumentList {return "_," + tail;}
     / head:AssignmentExpression {return head;}
     / __ {return "_";}
-  /* = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
-      return buildList(head, tail, 3);
-    } */
-
-/* ArgumentList
-  = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
-      return buildList(head, tail, 3);
-    } */
 
 LeftHandSideExpression
   = CallExpression
   / NewExpression
 
 PostfixExpression
-  = code:$(argument:LeftHandSideExpression _ operator:PostfixOperator) {
-      return code;
+  = code:(argument:LeftHandSideExpression _ operator:PostfixOperator) {
+      return code.join("");
       // return {
       //   type:     "UpdateExpression",
       //   operator: operator,
@@ -789,7 +782,7 @@ UnaryOperator
 MultiplicativeExpression
   = head:UnaryExpression
     tail:(__ MultiplicativeOperator __ UnaryExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 MultiplicativeOperator
   = $("*" !"=")
@@ -799,7 +792,7 @@ MultiplicativeOperator
 AdditiveExpression
   = head:MultiplicativeExpression
     tail:(__ AdditiveOperator __ MultiplicativeExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 AdditiveOperator
   = $("+" ![+=])
@@ -808,7 +801,7 @@ AdditiveOperator
 ShiftExpression
   = head:AdditiveExpression
     tail:(__ ShiftOperator __ AdditiveExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 ShiftOperator
   = $("<<"  !"=")
@@ -818,7 +811,7 @@ ShiftOperator
 RelationalExpression
   = head:ShiftExpression
     tail:(__ RelationalOperator __ ShiftExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 RelationalOperator
   = "<="
@@ -831,7 +824,7 @@ RelationalOperator
 RelationalExpressionNoIn
   = head:ShiftExpression
     tail:(__ RelationalOperatorNoIn __ ShiftExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 RelationalOperatorNoIn
   = "<="
@@ -843,12 +836,12 @@ RelationalOperatorNoIn
 EqualityExpression
   = head:RelationalExpression
     tail:(__ EqualityOperator __ RelationalExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 EqualityExpressionNoIn
   = head:RelationalExpressionNoIn
     tail:(__ EqualityOperator __ RelationalExpressionNoIn)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 EqualityOperator
   = "==="
@@ -859,12 +852,12 @@ EqualityOperator
 BitwiseANDExpression
   = head:EqualityExpression
     tail:(__ BitwiseANDOperator __ EqualityExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 BitwiseANDExpressionNoIn
   = head:EqualityExpressionNoIn
     tail:(__ BitwiseANDOperator __ EqualityExpressionNoIn)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 BitwiseANDOperator
   = $("&" ![&=])
@@ -872,12 +865,12 @@ BitwiseANDOperator
 BitwiseXORExpression
   = head:BitwiseANDExpression
     tail:(__ BitwiseXOROperator __ BitwiseANDExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 BitwiseXORExpressionNoIn
   = head:BitwiseANDExpressionNoIn
     tail:(__ BitwiseXOROperator __ BitwiseANDExpressionNoIn)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 BitwiseXOROperator
   = $("^" !"=")
@@ -885,12 +878,12 @@ BitwiseXOROperator
 BitwiseORExpression
   = head:BitwiseXORExpression
     tail:(__ BitwiseOROperator __ BitwiseXORExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 BitwiseORExpressionNoIn
   = head:BitwiseXORExpressionNoIn
     tail:(__ BitwiseOROperator __ BitwiseXORExpressionNoIn)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 BitwiseOROperator
   = $("|" ![|=])
@@ -898,12 +891,12 @@ BitwiseOROperator
 LogicalANDExpression
   = head:BitwiseORExpression
     tail:(__ LogicalANDOperator __ BitwiseORExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 LogicalANDExpressionNoIn
   = head:BitwiseORExpressionNoIn
     tail:(__ LogicalANDOperator __ BitwiseORExpressionNoIn)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 LogicalANDOperator
   = "&&"
@@ -911,12 +904,12 @@ LogicalANDOperator
 LogicalORExpression
   = head:LogicalANDExpression
     tail:(__ LogicalOROperator __ LogicalANDExpression)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 LogicalORExpressionNoIn
   = head:LogicalANDExpressionNoIn
     tail:(__ LogicalOROperator __ LogicalANDExpressionNoIn)*
-    { return buildBinaryExpression(head, tail); }
+    { return head + tail.join(""); }
 
 LogicalOROperator
   = "||"
@@ -952,7 +945,7 @@ ConditionalExpressionNoIn
   / LogicalORExpressionNoIn
 
 AssignmentExpression
-  = code:$(left:LeftHandSideExpression __
+  = code:(left:LeftHandSideExpression __
     "=" !"=" __
     right:AssignmentExpression)
     {
@@ -964,7 +957,7 @@ AssignmentExpression
       //   right:    right
       // };
     }
-  / code:$(left:LeftHandSideExpression __
+  / code:(left:LeftHandSideExpression __
     operator:AssignmentOperator __
     right:AssignmentExpression)
     {
@@ -1121,8 +1114,8 @@ EmptyStatement
   /* = ";" { return { type: "EmptyStatement" }; } */
 
 ExpressionStatement
-  = !("{" / FunctionToken) expression:Expression EOS{
-    return expression + ";";
+  = !("{" / FunctionToken) code:(expression:Expression EOS){
+    return code.join("");
   }
 
 IfStatement
@@ -1337,7 +1330,6 @@ Program
 SourceElements
   = head:SourceElement tail:(__ SourceElement)* {
       return head + tail.join("");
-      // return head + tail.join("");
     }
 
 SourceElement
