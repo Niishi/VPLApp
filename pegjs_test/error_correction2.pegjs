@@ -465,44 +465,44 @@ Zs = [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
 
 /* Tokens */
 
-BreakToken      = "break"      !IdentifierPart
-CaseToken       = "case"       !IdentifierPart
-CatchToken      = "catch"      !IdentifierPart
-ClassToken      = "class"      !IdentifierPart
-ConstToken      = "const"      !IdentifierPart
-ContinueToken   = "continue"   !IdentifierPart
-DebuggerToken   = "debugger"   !IdentifierPart
-DefaultToken    = "default"    !IdentifierPart
-DeleteToken     = "delete"     !IdentifierPart
-DoToken         = "do"         !IdentifierPart
-ElseToken       = "else"       !IdentifierPart
-EnumToken       = "enum"       !IdentifierPart
-ExportToken     = "export"     !IdentifierPart
-ExtendsToken    = "extends"    !IdentifierPart
-FalseToken      = "false"      !IdentifierPart
-FinallyToken    = "finally"    !IdentifierPart
-ForToken        = "for"        !IdentifierPart
-FunctionToken   = "function"   !IdentifierPart
-GetToken        = "get"        !IdentifierPart
-IfToken         = "if"         !IdentifierPart
-ImportToken     = "import"     !IdentifierPart
-InstanceofToken = "instanceof" !IdentifierPart
-InToken         = "in"         !IdentifierPart
-NewToken        = "new"        !IdentifierPart
-NullToken       = "null"       !IdentifierPart
-ReturnToken     = "return"     !IdentifierPart
-SetToken        = "set"        !IdentifierPart
-SuperToken      = "super"      !IdentifierPart
-SwitchToken     = "switch"     !IdentifierPart
-ThisToken       = "this"       !IdentifierPart
-ThrowToken      = "throw"      !IdentifierPart
-TrueToken       = "true"       !IdentifierPart
-TryToken        = "try"        !IdentifierPart
-TypeofToken     = "typeof"     !IdentifierPart
-VarToken        = "var"        !IdentifierPart
-VoidToken       = "void"       !IdentifierPart
-WhileToken      = "while"      !IdentifierPart
-WithToken       = "with"       !IdentifierPart
+BreakToken      = "break"      !IdentifierPart { return "break"; }
+CaseToken       = "case"       !IdentifierPart { return "case"; }
+CatchToken      = "catch"      !IdentifierPart { return "catch"; }
+ClassToken      = "class"      !IdentifierPart { return "class"; }
+ConstToken      = "const"      !IdentifierPart { return "const"; }
+ContinueToken   = "continue"   !IdentifierPart { return "continue"; }
+DebuggerToken   = "debugger"   !IdentifierPart { return "debugger"; }
+DefaultToken    = "default"    !IdentifierPart { return "default"; }
+DeleteToken     = "delete"     !IdentifierPart { return "delete"; }
+DoToken         = "do"         !IdentifierPart { return "do"; }
+ElseToken       = "else"       !IdentifierPart { return "else"; }
+EnumToken       = "enum"       !IdentifierPart { return "enum"; }
+ExportToken     = "export"     !IdentifierPart { return "export"; }
+ExtendsToken    = "extends"    !IdentifierPart { return "extends"; }
+FalseToken      = "false"      !IdentifierPart { return "false"; }
+FinallyToken    = "finally"    !IdentifierPart { return "finally"; }
+ForToken        = "for"        !IdentifierPart { return "for"; }
+FunctionToken   = "function"   !IdentifierPart { return "function"; }
+GetToken        = "get"        !IdentifierPart { return "get"; }
+IfToken         = "if"         !IdentifierPart { return "if"; }
+ImportToken     = "import"     !IdentifierPart { return "import"; }
+InstanceofToken = "instanceof" !IdentifierPart { return "instanceof"; }
+InToken         = "in"         !IdentifierPart { return "in"; }
+NewToken        = "new"        !IdentifierPart { return "new"; }
+NullToken       = "null"       !IdentifierPart { return "null"; }
+ReturnToken     = "return"     !IdentifierPart { return "return"; }
+SetToken        = "set"        !IdentifierPart { return "set"; }
+SuperToken      = "super"      !IdentifierPart { return "super"; }
+SwitchToken     = "switch"     !IdentifierPart { return "switch"; }
+ThisToken       = "this"       !IdentifierPart { return "this"; }
+ThrowToken      = "throw"      !IdentifierPart { return "throw"; }
+TrueToken       = "true"       !IdentifierPart { return "true"; }
+TryToken        = "try"        !IdentifierPart { return "try"; }
+TypeofToken     = "typeof"     !IdentifierPart { return "typeof"; }
+VarToken        = "var"        !IdentifierPart { return "var"; }
+VoidToken       = "void"       !IdentifierPart { return "void"; }
+WhileToken      = "while"      !IdentifierPart { return "while"; }
+WithToken       = "with"       !IdentifierPart { return "with"; }
 
 /* Skipped */
 
@@ -530,14 +530,13 @@ EOF
 /* ----- A.3 Expressions ----- */
 
 PrimaryExpression
-= ThisToken { return "this"; }
+    = ThisToken { return "this"; }
   /* = ThisToken { return { type: "ThisExpression" }; } */
   / Identifier
   / Literal
   / ArrayLiteral
   / ObjectLiteral
   / "(" __ expression:Expression __ ")" { return "(" + expression + ")"; }
-
 ArrayLiteral
   = "[" __ elision:(Elision __)? "]" {
       // return {
@@ -710,7 +709,7 @@ CallExpression
     }
 
 Arguments
-  = code:("(" __ args:(ArgumentList __)? ")") {
+  = code:("(" args:(ArgumentList )? ")") {
       return code.join("");
     }
 
@@ -727,12 +726,6 @@ LeftHandSideExpression
 PostfixExpression
   = code:(argument:LeftHandSideExpression _ operator:PostfixOperator) {
       return code.join("");
-      // return {
-      //   type:     "UpdateExpression",
-      //   operator: operator,
-      //   argument: argument,
-      //   prefix:   false
-      // };
     }
   / LeftHandSideExpression
 
@@ -743,16 +736,6 @@ PostfixOperator
 UnaryExpression
   = PostfixExpression
   / operator:UnaryOperator __ argument:UnaryExpression {
-      // var type = (operator === "++" || operator === "--")
-      //   ? "UpdateExpression"
-      //   : "UnaryExpression";
-      //
-      // return {
-      //   type:     type,
-      //   operator: operator,
-      //   argument: argument,
-      //   prefix:   true
-      // };
       return operator + argument;
     }
 
@@ -769,8 +752,24 @@ UnaryOperator
 
 MultiplicativeExpression
   = head:UnaryExpression
-    tail:(__ MultiplicativeOperator __ UnaryExpression)*
+    tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?{
+        if(test){
+            return ope + test;
+        }else{
+            return ope + "_";
+        }
+    })*
     { return head + tail.join(""); }
+    / __?  ope:MultiplicativeOperator __ tail:(test:MultiplicativeExpression{
+        if(test){
+            return ope + test;
+        }else{
+            return ope + "_";
+        }
+    })*{
+        return "_" + tail.join("");
+    }
+    / UnaryExpression
 
 MultiplicativeOperator
   = $("*" !"=")
@@ -779,8 +778,17 @@ MultiplicativeOperator
 
 AdditiveExpression
   = head:MultiplicativeExpression
-    tail:(__ AdditiveOperator __ MultiplicativeExpression)*
-    { return head + tail.join(""); }
+    tail:(__ ope:AdditiveOperator __ test:(MultiplicativeExpression)?{
+        if(test){
+            return ope + test;
+        }else{
+            return ope + "_";
+        }}
+    )*
+    { return head + tail.join("") }
+    /* = code:(MultiplicativeExpression __ AdditiveOperator __ tail:AdditiveExpression){return code.join("");}
+    / __ ope:AdditiveOperator tail:AdditiveExpression{return "_" + ope + tail.join("");}
+    / head:MultiplicativeExpression {return head;} */
 
 AdditiveOperator
   = $("+" ![+=])
@@ -797,6 +805,14 @@ ShiftOperator
   / $(">>"  !"=")
 
 RelationalExpression
+    /* = head:ShiftExpression?
+    tail:(__ ope:RelationalOperator __ test:ShiftExpression?{
+        if(test) return ope + test;
+        else return ope + "_";
+    })*
+    { if(head) return head + tail.join("");
+      else return "_" + tail.join("");
+    } */
   = head:ShiftExpression
     tail:(__ RelationalOperator __ ShiftExpression)*
     { return head + tail.join(""); }
@@ -822,14 +838,40 @@ RelationalOperatorNoIn
   / $InstanceofToken
 
 EqualityExpression
-  = head:RelationalExpression
+    = head:RelationalExpression
+    tail:(__ ope:EqualityOperator __ test:RelationalExpression?{
+        if(test)return ope + test;
+        else return ope + "_";
+    })*
+    {return head + tail.join("");}
+    / __? ope:EqualityOperator __ tail:(test:EqualityExpression{
+        if(test) return ope + test;
+        else return ope + "_";
+    })*{
+        return "_" + tail.join("");
+    }
+    / RelationalExpression
+  /* = head:RelationalExpression
     tail:(__ EqualityOperator __ RelationalExpression)*
-    { return head + tail.join(""); }
+    { return head + tail.join(""); } */
 
 EqualityExpressionNoIn
-  = head:RelationalExpressionNoIn
+    = head:RelationalExpressionNoIn
+    tail:(__ ope:EqualityOperator __ test:RelationalExpressionNoIn?{
+        if(test)return ope + test;
+        else return ope + "_";
+    })*
+    {return head + tail.join("");}
+    / __? ope:EqualityOperator __ tail:(test:EqualityExpression{
+        if(test) return ope + test;
+        else return ope + "_";
+    })*{
+        return "_" + tail.join("");
+    }
+    / RelationalExpressionNoIn
+  /* = head:RelationalExpressionNoIn
     tail:(__ EqualityOperator __ RelationalExpressionNoIn)*
-    { return head + tail.join(""); }
+    { return head + tail.join(""); } */
 
 EqualityOperator
   = "==="
@@ -1078,11 +1120,6 @@ VariableDeclarationListNoIn
 VariableDeclaration
   = code:$(id:Identifier init:(__ Initialiser)?) {
       return code;
-      // return {
-      //   type: "VariableDeclarator",
-      //   id:   id,
-      //   init: extractOptional(init, 1)
-      // };
     }
 
 VariableDeclarationNoIn
@@ -1113,38 +1150,44 @@ ExpressionStatement
   }
 
 IfStatement
-  = code:$(IfToken __ "(" __ test:Expression __ ")" __
+  = code:(IfToken __ "(" __ test:Expression __ ")" __
       consequent:Statement __
       ElseToken __
       alternate:Statement)
   {
-    return code;
+    return code.join("");
   }
-/ code:$(IfToken __ "(" __ test:Expression __ ")" __
+/ code:(x:IfToken __ "(" __ test:Expression __ ")" __
   consequent:Statement) {
-    return code;
+    return  code.join("");
   }
-  /* = IfToken __ "(" __ test:Expression __ ")" __
-    consequent:Statement __
-    ElseToken __
-    alternate:Statement
-    {
-      return {
-        type:       "IfStatement",
-        test:       test,
-        consequent: consequent,
-        alternate:  alternate
-      };
-    }
-  / IfToken __ "(" __ test:Expression __ ")" __
-    consequent:Statement {
-      return {
-        type:       "IfStatement",
-        test:       test,
-        consequent: consequent,
-        alternate:  null
-      };
-    } */
+  / IfToken __ "("? __ test:Expression? __ ")"? __
+  consequent:Statement? __
+  ElseToken __
+  alternate:Statement?
+  {
+      let result = "if(";
+      if(test) result += test;
+      else result += "_";
+      result += ")";
+      if(consequent) result += consequent;
+      else result += "{}";
+      result += "else ";
+      if(alternate) result += alternate;
+      else result += "{}";
+      return result;
+  }
+  / IfToken __ "("? __ test:Expression? __ ")"? __
+  consequent:Statement?
+   {
+       let result = "if(";
+       if(test) result += test;
+       else result += "_";
+       result += ")";
+       if(consequent) result += consequent;
+       else result += "{}";
+       return result;
+   }
 
 IterationStatement
   = code:$(DoToken __

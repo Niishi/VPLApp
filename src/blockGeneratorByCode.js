@@ -1,6 +1,7 @@
-const esprima = require('esprima');
+const esprima    = require('esprima');
 const estraverse = require('estraverse');
-const prompt = require('electron-prompt');
+const prompt     = require('electron-prompt');
+const peg        = require("pegjs");
 
 
 function createFunctionTuple(name, argLengthList){
@@ -169,8 +170,7 @@ function isValidCode(code){
 
 
 function createParser(){
-    peg = require("pegjs");
-    return peg.generate(fs.readFileSync("./pegjs_test/error_correction.pegjs").toString());
+    return peg.generate(fs.readFileSync("./pegjs_test/error_correction2.pegjs").toString());
 
 }
 const parser = createParser();
@@ -181,7 +181,6 @@ function trimError(error) {
     firstLines = document.getLines(0, error.lineNumber - 2);
     lastLines = document.getLines(error.lineNumber, document.getLength() - 1);
     errorCode = document.getLine(error.lineNumber - 1).trim();
-    // fixCode = predictCode(errorCode);
     fixCode = parser.parse(errorCode);
     if(fixCode) lines = firstLines.concat([fixCode]).concat(lastLines);
     else lines = firstLines.concat(["_error('" + errorCode + "');"]).concat(lastLines);
