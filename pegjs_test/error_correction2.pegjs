@@ -1356,6 +1356,22 @@ IterationStatement
     {
       return code;
     }
+  / ForToken __
+    "("? __
+    kind:VarKind __ declarations:VariableDeclarationListNoIn __ ";"? __
+    test:(e:Expression __{return e})? ";"? __
+    update:(e:Expression __{return e})?
+    ")"? __
+    body:Statement?
+    {
+        let result = "for(" + kind + " " + declarations + ";";
+        if(test) result += test;
+        result += ";";
+        if(update) result += update;
+        result += ")";
+        result += body ? body : "{}";
+        return result;
+    }
   / code:$(ForToken __
     "(" __
     left:LeftHandSideExpression __
@@ -1376,6 +1392,7 @@ IterationStatement
     {
       return code;
     }
+
 
 ContinueStatement
   = code:$(ContinueToken EOS) {

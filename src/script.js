@@ -265,7 +265,7 @@ document.getElementById("blockTextBox").onkeyup = function(e){
     let code = textBox.value;
     let newBlock = blockByCode(code, hiddenWorkspace);
     if(newBlock === 'error'){   //構文エラーが起こった場合にブロックの提案を行う
-
+        console.log("オワオワリ");
     }else if(newBlock !== null) {
         newBlock.moveBy(50, 100);
         if(block) block.dispose();
