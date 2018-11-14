@@ -1,4 +1,6 @@
 setup = function(){
 };
 
-rect(_, _, 2, _);
+rect(_, 100, _, 200);
+if (_) {
+}

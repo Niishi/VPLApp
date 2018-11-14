@@ -175,16 +175,20 @@ function createParser(){
 }
 const parser = createParser();
 function trimError(error) {
-    const editor = getAceEditor();
-    const editSession = editor.getSession();
-    const document = editSession.getDocument();
-    firstLines = document.getLines(0, error.lineNumber - 2);
-    lastLines = document.getLines(error.lineNumber, document.getLength() - 1);
-    errorCode = document.getLine(error.lineNumber - 1).trim();
-    fixCode = parser.parse(errorCode);
-    if(fixCode) lines = firstLines.concat([fixCode]).concat(lastLines);
-    else lines = firstLines.concat(["_error('" + errorCode + "');"]).concat(lastLines);
-    return lines.join('\n');
+    // const editor = getAceEditor();
+    // const editSession = editor.getSession();
+    // const document = editSession.getDocument();
+    // firstLines = document.getLines(0, error.lineNumber - 2);
+    // lastLines = document.getLines(error.lineNumber, document.getLength() - 1);
+    // errorCode = document.getLine(error.lineNumber - 1).trim();
+    // fixCode = parser.parse(errorCode);
+    // if(fixCode) lines = firstLines.concat([fixCode]).concat(lastLines);
+    // else lines = firstLines.concat(["_error('" + errorCode + "');"]).concat(lastLines);
+    // return lines.join('\n');
+
+    const program = getAceEditor().getValue();
+    fixCode = parser.parse(program);
+    return fixCode;
 }
 
 /**

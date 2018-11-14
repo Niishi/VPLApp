@@ -227,8 +227,13 @@ FutureReservedWord
   / ExportToken
   / ExtendsToken
   / ImportToken
+  / LetToken
   / SuperToken
 
+VarKind
+    = VarToken
+    / LetToken
+    / ConstToken
 Literal
   = NullLiteral
   / BooleanLiteral
@@ -485,6 +490,7 @@ ForToken        = "for"        !IdentifierPart { return "for"; }
 FunctionToken   = "function"   !IdentifierPart { return "function"; }
 GetToken        = "get"        !IdentifierPart { return "get"; }
 IfToken         = "if"         !IdentifierPart { return "if"; }
+LetToken        = "let"        !IdentifierPart { return "let"; }
 ImportToken     = "import"     !IdentifierPart { return "import"; }
 InstanceofToken = "instanceof" !IdentifierPart { return "instanceof"; }
 InToken         = "in"         !IdentifierPart { return "in"; }
@@ -709,8 +715,12 @@ CallExpression
     }
 
 Arguments
-  = code:("(" args:(ArgumentList )? ")") {
-      return code.join("");
+  = "(" args:(ArgumentList )? ")" {
+      let result = "(";
+      if(args === "_") return result + ")";
+      else result += args ? args : "";
+      result += ")";
+      return result;
     }
 
 ArgumentList
@@ -814,8 +824,18 @@ RelationalExpression
       else return "_" + tail.join("");
     } */
   = head:ShiftExpression
-    tail:(__ RelationalOperator __ ShiftExpression)*
+    tail:(__ ope:RelationalOperator __ test:ShiftExpression?{
+        if(test) return ope + test;
+        else return ope + "_";
+    })*
     { return head + tail.join(""); }
+    / __? ope:RelationalOperator __ tail:(test:RelationalExpression?{
+        if(test) return ope + test;
+        else return ope + "_";
+    }){
+        return "_" + tail;
+    }
+    / ShiftExpression
 
 RelationalOperator
   = "<="
@@ -826,9 +846,22 @@ RelationalOperator
   / $InToken
 
 RelationalExpressionNoIn
-  = head:ShiftExpression
+= head:ShiftExpression
+  tail:(__ ope:RelationalOperatorNoIn __ test:ShiftExpression?{
+      if(test) return ope + test;
+      else return ope + "_";
+  })*
+  { return head + tail.join(""); }
+  / __? ope:RelationalOperatorNoIn __ tail:(test:RelationalExpression?{
+      if(test) return ope + test;
+      else return ope + "_";
+  }){
+      return "_" + tail;
+  }
+  / ShiftExpression
+  /* = head:ShiftExpression
     tail:(__ RelationalOperatorNoIn __ ShiftExpression)*
-    { return head + tail.join(""); }
+    { return head + tail.join(""); } */
 
 RelationalOperatorNoIn
   = "<="
@@ -842,18 +875,14 @@ EqualityExpression
     tail:(__ ope:EqualityOperator __ test:RelationalExpression?{
         if(test)return ope + test;
         else return ope + "_";
-    })*
-    {return head + tail.join("");}
-    / __? ope:EqualityOperator __ tail:(test:EqualityExpression{
-        if(test) return ope + test;
-        else return ope + "_";
-    })*{
-        return "_" + tail.join("");
+    })* { return head + tail.join(""); }
+    / __? ope:EqualityOperator __ tail:(test:EqualityExpression?{
+        if(test) return test;
+        else return "_";
+    }){
+        return "_" + ope + tail;
     }
     / RelationalExpression
-  /* = head:RelationalExpression
-    tail:(__ EqualityOperator __ RelationalExpression)*
-    { return head + tail.join(""); } */
 
 EqualityExpressionNoIn
     = head:RelationalExpressionNoIn
@@ -862,11 +891,11 @@ EqualityExpressionNoIn
         else return ope + "_";
     })*
     {return head + tail.join("");}
-    / __? ope:EqualityOperator __ tail:(test:EqualityExpression{
-        if(test) return ope + test;
-        else return ope + "_";
-    })*{
-        return "_" + tail.join("");
+    / __ ope:EqualityOperator __ tail:(test:EqualityExpressionNoIn?{
+        if(test) return test;
+        else return "_";
+    }){
+        return "_" + tail;
     }
     / RelationalExpressionNoIn
   /* = head:RelationalExpressionNoIn
@@ -919,27 +948,74 @@ BitwiseOROperator
   = $("|" ![|=])
 
 LogicalANDExpression
-  = head:BitwiseORExpression
-    tail:(__ LogicalANDOperator __ BitwiseORExpression)*
+    = head:BitwiseORExpression
+    tail:(__ ope:LogicalANDOperator __ test:BitwiseORExpression?{
+        if(test) return ope + test;
+        else return ope + "_";
+    })*
     { return head + tail.join(""); }
+    / __? ope:LogicalANDOperator __ tail:(test:LogicalANDExpression? {
+        if(test) return ope + test;
+        else return ope + "_";
+    }){
+        return "_" + tail;
+    }
+    / BitwiseORExpression
+  /* = head:BitwiseORExpression
+    tail:(__ LogicalANDOperator __ BitwiseORExpression)*
+    { return head + tail.join(""); } */
 
 LogicalANDExpressionNoIn
-  = head:BitwiseORExpressionNoIn
+    = head:BitwiseORExpressionNoIn
+        tail:(__ ope:LogicalANDOperator __ test:BitwiseORExpressionNoIn?{
+            if(test) return ope + test;
+            else return ope + "_";
+        })*
+        { return head + tail.join(""); }
+        / __? ope:LogicalANDOperator __ tail:(test:LogicalANDExpressionNoIn? {
+            if(test) return ope + test;
+            else return ope + "_";
+        }){
+            return "_" + tail;
+        }
+        / BitwiseORExpressionNoIn
+  /* = head:BitwiseORExpressionNoIn
     tail:(__ LogicalANDOperator __ BitwiseORExpressionNoIn)*
-    { return head + tail.join(""); }
+    { return head + tail.join(""); } */
 
 LogicalANDOperator
   = "&&"
 
 LogicalORExpression
   = head:LogicalANDExpression
-    tail:(__ LogicalOROperator __ LogicalANDExpression)*
-    { return head + tail.join(""); }
+    tail:(__ ope:LogicalOROperator __ test:LogicalANDExpression?{
+        if(test) return ope + test;
+        else return ope + "_";
+    })*{ return head + tail.join(""); }
+    / __? ope:LogicalOROperator __ tail:(test:LogicalORExpression?{
+        if(test) return test;
+        else return "_";
+    }){
+        return "_" + ope + tail;
+    }
+    / LogicalANDExpression
 
 LogicalORExpressionNoIn
-  = head:LogicalANDExpressionNoIn
+    = head:LogicalANDExpressionNoIn
+      tail:(__ ope:LogicalOROperator __ test:LogicalANDExpressionNoIn?{
+          if(test) return ope + test;
+          else return ope + "_";
+      })*{ return head + tail.join(""); }
+      / __? ope:LogicalOROperator __ tail:(test:LogicalORExpressionNoIn?{
+          if(test) return test;
+          else return "_";
+      }){
+          return "_" + ope + tail;
+      }
+      / LogicalANDExpressionNoIn
+  /* = head:LogicalANDExpressionNoIn
     tail:(__ LogicalOROperator __ LogicalANDExpressionNoIn)*
-    { return head + tail.join(""); }
+    { return head + tail.join(""); } */
 
 LogicalOROperator
   = "||"
@@ -1008,17 +1084,42 @@ AssignmentExpression
   / ConditionalExpression
 
 AssignmentExpressionNoIn
-  = code:$(left:LeftHandSideExpression __
+    = code:(left:LeftHandSideExpression __
+      "=" !"=" __
+      right:AssignmentExpressionNoIn)
+      {
+          return code.join("");
+      }
+    / code:(left:LeftHandSideExpression __
+      operator:AssignmentOperator __
+      right:AssignmentExpressionNoIn)
+      {
+          return code.join("");
+        // return {
+        //   type:     "AssignmentExpression",
+        //   operator: operator,
+        //   left:     left,
+        //   right:    right
+        // };
+      }
+    / __ "=" !"=" __ right:AssignmentExpressionNoIn
+    {
+        return "_" + "=" + right;
+    }
+    / left:LeftHandSideExpression __ "="!"=" __
+    {
+        return left + "=" + "_";
+    }
+    / __ "=" !"=" __
+    {
+        return "_" + "=" + "_";
+    }
+    / ConditionalExpressionNoIn
+  /* = code:$(left:LeftHandSideExpression __
     "=" !"=" __
     right:AssignmentExpressionNoIn)
     {
         return code;
-      // return {
-      //   type:     "AssignmentExpression",
-      //   operator: "=",
-      //   left:     left,
-      //   right:    right
-      // };
     }
   / code:$(left:LeftHandSideExpression __
     operator:AssignmentOperator __
@@ -1032,7 +1133,7 @@ AssignmentExpressionNoIn
       //   right:    right
       // };
     }
-  / ConditionalExpressionNoIn
+  / ConditionalExpressionNoIn */
 
 AssignmentOperator
   = "*="
@@ -1097,8 +1198,8 @@ StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
 VariableStatement
-  = code:$(VarToken __ declarations:VariableDeclarationList EOS) {
-    return code;
+  = code:(VarKind __ declarations:VariableDeclarationList x:EOS) {
+    return code.join("");
   }
   /* = VarToken __ declarations:VariableDeclarationList EOS {
       return {
@@ -1108,37 +1209,54 @@ VariableStatement
     } */
 
 VariableDeclarationList
-  = head:VariableDeclaration tail:(__ "," __ VariableDeclaration)* {
-      return buildList(head, tail, 3);
+  = head:VariableDeclaration tail:(__ "," __ x:VariableDeclaration{
+      return "," + x;
+  })* {
+      return  head + tail.join("");
     }
 
 VariableDeclarationListNoIn
-  = head:VariableDeclarationNoIn tail:(__ "," __ VariableDeclarationNoIn)* {
-      return buildList(head, tail, 3);
+    = head:VariableDeclarationNoIn tail:(__ "," __ x:VariableDeclarationNoIn{
+        return "," + x;
+    })* {
+        return  head + tail.join("");
     }
+  /* = head:VariableDeclarationNoIn tail:(__ "," __ VariableDeclarationNoIn)* {
+      return head + tail.join("");
+    } */
 
 VariableDeclaration
-  = code:$(id:Identifier init:(__ Initialiser)?) {
-      return code;
+  = id:Identifier? init:(__ x:Initialiser {return x;})? {
+      let result = id ? id : "_";
+      result += init ? init : "";
+      return result;
     }
 
 VariableDeclarationNoIn
-  = code:$(id:Identifier init:(__ InitialiserNoIn)?) {
-      // return {
-      //   type: "VariableDeclarator",
-      //   id:   id,
-      //   init: extractOptional(init, 1)
-      // };
-      return code;
-    }
+  = id:Identifier? init:(__ x:InitialiserNoIn {return x;})? {
+    let result = id ? id : "_";
+    result += init ? init : "";
+    return result;
+  }
 
 Initialiser
 /* = "=" !"=" __ expression:AssignmentExpression { return expression; } */
-  = code:$("=" !"=" __ expression:AssignmentExpression) { return code; }
+/* = code:$("=" !"=" __ expression:AssignmentExpression) { return code; } */
+  = "=" !"=" __ expression:AssignmentExpression? {
+      let result = "=";
+      result += expression ? expression : "_";
+      return result;
+  }
+
 
 InitialiserNoIn
 /* = "=" !"=" __ expression:AssignmentExpressionNoIn { return expression; } */
-  = code:$("=" !"=" __ expression:AssignmentExpressionNoIn) { return code; }
+/* = code:$("=" !"=" __ expression:AssignmentExpressionNoIn) { return code; } */
+    = "=" !"=" __ expression:AssignmentExpressionNoIn? {
+        let result = "=";
+        result += expression ? expression : "_";
+        return result;
+    }
 
 EmptyStatement
 = ";" { return ";"; }
@@ -1194,9 +1312,30 @@ IterationStatement
     body:Statement __
     WhileToken __ "(" __ test:Expression __ ")" EOS)
     { return code; }
+  / DoToken __
+    body:Statement? __
+    WhileToken? __ "("? __ test:Expression? __ ")"? EOS?
+    {
+        let result = "do";
+        result += body ? body : "{}";
+        result += "while(" + (test ? test : "_") + ");"
+        return result;
+    }
   / code:$(WhileToken __ "(" __ test:Expression __ ")" __
     body:Statement)
     { return code; }
+  / WhileToken __ "("? __ test:Expression? __ ")"? __
+    body:Statement? {
+      let result = "while(";
+      if(test) result += test;
+      else result += "_";
+      result += ")"
+      if(body) result += body;
+      else result += "{}";
+      return result;
+  }
+
+
   / code:$(ForToken __
     "(" __
     init:(ExpressionNoIn __)? ";" __
@@ -1209,7 +1348,7 @@ IterationStatement
     }
   / code:$(ForToken __
     "(" __
-    VarToken __ declarations:VariableDeclarationListNoIn __ ";" __
+    VarKind __ declarations:VariableDeclarationListNoIn __ ";" __
     test:(Expression __)? ";" __
     update:(Expression __)?
     ")" __
@@ -1229,7 +1368,7 @@ IterationStatement
     }
   / code:$(ForToken __
     "(" __
-    VarToken __ declarations:VariableDeclarationListNoIn __
+    VarKind __ declarations:VariableDeclarationListNoIn __
     InToken __
     right:Expression __
     ")" __
@@ -1365,7 +1504,7 @@ Program
     }
 
 SourceElements
-  = head:SourceElement tail:(__ SourceElement)* {
+  = head:SourceElement tail:(__ x:SourceElement{return x;})* {
       return head + tail.join("");
     }
 
