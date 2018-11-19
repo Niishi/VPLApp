@@ -522,8 +522,8 @@ _
 
 EOS
   = code:(__ ";") {return code.join("");}
-  / _ SingleLineComment? LineTerminatorSequence
-  / _ &"}"
+  / _ SingleLineComment? LineTerminatorSequence {return "";}
+  / _ &"}" {return "";}
   / __ EOF {return "";}
 
 EOF
@@ -1184,8 +1184,9 @@ Statement
   / DebuggerStatement
 
 Block
-  = code:$("{" __ body:(StatementList __)? "}") {
-    return code;
+  = "{" __ body:(x:StatementList __{return x;})? "}" {
+      let result = "{" + (body ? body : "") + "}";
+    return result;
   }
   /* = "{" __ body:(StatementList __)? "}" {
       return {
@@ -1195,7 +1196,8 @@ Block
     } */
 
 StatementList
-  = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
+/* = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); } */
+  = head:Statement tail:(__ x:Statement{return x})* { return head + tail.join(""); }
 
 VariableStatement
   = code:(VarKind __ declarations:VariableDeclarationList x:EOS) {
@@ -1496,6 +1498,18 @@ FunctionDeclaration
     {
       return code;
     }
+  / FunctionToken __ id:(x:Identifier __{return x;})?
+  "("? __ params:(x:FormalParameterList __{return x;})? ")"? __
+  "{"? __ body:FunctionBody? __ "}"?
+  {
+      let result = "function " + (id ? id : "_") + "(";
+      result += params ? params : "";
+      result += "){\n";
+      result += body ? body : "";
+      result += "}";
+      return result;
+  }
+
 
 FunctionExpression
   = code:$(FunctionToken __ id:(Identifier __)?
@@ -1504,11 +1518,45 @@ FunctionExpression
     {
       return code;
     }
+  / FunctionToken __ id:(x:Identifier __ {return x;})?
+  "("? __ params:(x:FormalParameterList __{return x;})? ")"? __
+  "{"? __ body:FunctionBody? __ "}"?
+  {
+      let result = "function " + (id ? id : "") + "(";
+      result += params ? params : "";
+      result += "){\n";
+      result += body ? body : "";
+      result += "}";
+      return result;
+  }
 
 FormalParameterList
-  = code:$(head:Identifier tail:(__ "," __ Identifier)*) {
-      return code;
-    }
+    = head:Identifier?
+      tail:(__ "," __ x:Identifier? {
+          if(x) return "," + x;
+          else return ",_";
+      })*
+      {
+          if(head) return head + tail.join("");
+          else{
+              if(tail.length === 0) return "";
+              else return "_" + tail.join("");
+          }
+      }
+
+  /* = head:Identifier
+    tail:(__ ","  __ test:FormalParameterList?{
+        if(test) return "," + test;
+        else return "," + "_";
+    })*
+    { return head + tail.join(""); }
+  / __? "," __ tail:(test:FormalParameterList{
+      if(test) return "," + test;
+      else return "," + "_";
+  })*{
+      return "_" + tail.join("");
+  }
+  / Identifier */
 
 FunctionBody
   = body:SourceElements? {

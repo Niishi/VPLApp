@@ -203,6 +203,7 @@ function insertStr(str, index, insert) {
 }
 
 function blockByCode(code, workspace, count=0){
+    console.log(code);
     if(count > 10){
         console.log("blockByCode()が10回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         return "error";
@@ -214,11 +215,10 @@ function blockByCode(code, workspace, count=0){
     setCurrentWorkspace(workspace);
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
-        var ast = esprima.parseModule(code, {tolerant: false, comment: true});
+        var ast = esprima.parseModule(code, {tolerant: true, comment: true});
     } catch (e) {
-        const fixCode = parser.parse(code);
+        let fixCode = parser.parse(code);
         return blockByCode(fixCode, workspace, count+1);
-        return "error";
     }
     for (statement of ast.body) {
         var block = blockByStatement(statement);
@@ -590,14 +590,17 @@ function forStatementBlock(statement) {
     if(statement.init.type == 'VariableDeclaration'){
         var block       = createBlock('for_decl');
         var initBlock   = blockByStatement(statement.init);
-        var testBlock   = blockByExpression(statement.test);
-        var updateBlock = blockByExpression(statement.update);
-        var stmBlock    = blockByStatement(statement.body);
         combineStatementBlock(block, initBlock, 0);
-        combineIntoBlock(block, testBlock);
-        combineIntoBlock(block, updateBlock);
+        if(statement.test){
+            var testBlock   = blockByExpression(statement.test);
+            combineIntoBlock(block, testBlock, 1);
+        }
+        if(statement.update){
+            var updateBlock = blockByExpression(statement.update);
+            combineIntoBlock(block, updateBlock,2);
+        }
+        var stmBlock    = blockByStatement(statement.body);
         combineStatementBlock(block, stmBlock, 3);
-
         return block;
     }
     var block = createBlock('my_for');
@@ -609,7 +612,6 @@ function forStatementBlock(statement) {
     combineIntoBlock(block, testBlock);
     combineIntoBlock(block, updateBlock);
     combineStatementBlock(block, stmBlock, 3);
-
     return block;
 }
 

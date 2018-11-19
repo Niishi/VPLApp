@@ -3,7 +3,6 @@ const fs = require('fs');
 const ipc = require('electron').ipcRenderer;
 var Search = require('ace/search').Search;
 var Range = require('ace/range').Range;
-
 let currentFilePath = "";
 var blocklyDiv = document.getElementById("blocklyDiv");
 var workspace = Blockly.inject(blocklyDiv, {
@@ -34,7 +33,6 @@ function changeEvent(e) {
     var editor = getAceEditor();
     var cursorPosition = editor.getCursorPosition();
     editor.$blockScrolling = Infinity;
-
     editor.setValue(code,-1);
     editor.moveCursorToPosition(cursorPosition);
     // runCode();
@@ -92,7 +90,6 @@ function addMarkerToBlock(block){
         editSession.removeMarker(rangeId);
     }
     rangeIds = [];
-
     const allBlocks = workspace.getAllBlocks(true);
     let count = 0;
     for(ablock of allBlocks){
