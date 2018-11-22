@@ -1,5 +1,2 @@
 setup = function(){
 };
-
-if (a) {
-}

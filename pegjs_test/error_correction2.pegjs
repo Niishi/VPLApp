@@ -628,16 +628,6 @@ PropertyAssignment
     "{" __ body:FunctionBody __ "}"
     {
         return "set " + key + "(" + params + "){" + body + "}";
-      // return {
-      //   key:   key,
-      //   value: {
-      //     type:   "FunctionExpression",
-      //     id:     null,
-      //     params: params,
-      //     body:   body
-      //   },
-      //   kind:  "set"
-      // };
     }
 
 PropertyName
@@ -658,18 +648,33 @@ MemberExpression
         }
     )
     tail:(
-        __ "[" __ property:Expression __ "]" {
-            return "[" + property + "]";
-          // return { property: property, computed: true };
+        __ "[" __ property:Expression? __ "]" {
+            return "[" + (property ? property : "_") + "]";
         }
-      / __ "." __ property:IdentifierName {
-          return "." + property;
-          // return { property: property, computed: false };
+      / __ "." __ property:IdentifierName? {
+          return "." + (property ? property : "_");
         }
     )*
     {
         return head + tail.join("");
     }
+    / head:(
+        "." __ property:IdentifierName? {
+            return "_" + "." + (property ? property : "_");
+        }
+      / "[" __ property:Expression? __ "]"? {
+          return "[" + (property ? property : "_") + "]";
+      }
+    )
+      tail:(
+          __ "." __ property:IdentifierName? {
+              return "." + (property ? property : "_");
+          }
+        / __ "[" __ property:Expression? __ "]"? {
+            return "[" + (property ? property : "_") + "]";
+        }
+      )*
+    { return head + tail.join(""); }
 
 NewExpression
   = MemberExpression
@@ -688,16 +693,16 @@ CallExpression
         __ args:Arguments {
             return args;
         }
-      / __ "[" __ property:Expression __ "]" {
-          return "[" + property + "]";
+      / __ "[" __ property:Expression? __ "]"? {
+          return "[" + (property ? property : "_") + "]";
           // return {
           //   type:     "MemberExpression",
           //   property: property,
           //   computed: true
           // };
         }
-      / __ "." __ property:IdentifierName {
-          return "." + property;
+      / __ "." __ property:IdentifierName? {
+          return "." + (property ? property : "_");
           // return {
           //   type:     "MemberExpression",
           //   property: property,
@@ -715,7 +720,7 @@ CallExpression
     }
 
 Arguments
-  = "(" args:(ArgumentList )? ")" {
+  = "(" args:(ArgumentList )? ")"? {
       let result = "(";
       if(args === "_") return result + ")";
       else result += args ? args : "";
@@ -769,7 +774,9 @@ MultiplicativeExpression
             return ope + "_";
         }
     })*
-    { return head + tail.join(""); }
+    {
+        let result = (head ? head : "_");
+        return result + tail.join(""); }
     / __?  ope:MultiplicativeOperator __ tail:(test:MultiplicativeExpression{
         if(test){
             return ope + test;
@@ -789,13 +796,15 @@ MultiplicativeOperator
 AdditiveExpression
   = head:MultiplicativeExpression
     tail:(__ ope:AdditiveOperator __ test:(MultiplicativeExpression)?{
-        if(test){
-            return ope + test;
-        }else{
-            return ope + "_";
-        }}
-    )*
+        return ope + (test ? test : "_");
+    })*
     { return head + tail.join("") }
+    / __? ope:AdditiveOperator __ tail:(test:AdditiveExpression{
+        return ope + (test ? test : "_");
+    })*{
+        return "_" + tail.join("");
+    }
+    / MultiplicativeExpression
     /* = code:(MultiplicativeExpression __ AdditiveOperator __ tail:AdditiveExpression){return code.join("");}
     / __ ope:AdditiveOperator tail:AdditiveExpression{return "_" + ope + tail.join("");}
     / head:MultiplicativeExpression {return head;} */
