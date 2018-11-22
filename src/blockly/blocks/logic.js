@@ -160,8 +160,7 @@ Blockly.defineBlocksWithJsonArray([  // BEGIN JSON EXTRACT
     "args0": [
       {
         "type": "input_value",
-        "name": "A",
-        "check": "Boolean"
+        "name": "A"
       },
       {
         "type": "field_dropdown",
@@ -173,8 +172,7 @@ Blockly.defineBlocksWithJsonArray([  // BEGIN JSON EXTRACT
       },
       {
         "type": "input_value",
-        "name": "B",
-        "check": "Boolean"
+        "name": "B"
       }
     ],
     "inputsInline": true,

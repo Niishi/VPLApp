@@ -49,6 +49,7 @@ function onLoad() {
     editor.setHighlightActiveLine(false);
     editor.on('change', func1);
     // editor.getSelection().on('changeSelection', func2);
+
 }
 
 

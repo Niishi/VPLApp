@@ -17,45 +17,8 @@ var currentWorkspace;
 function setCurrentWorkspace(workspace){
     currentWorkspace = workspace;
 }
-let cursorPosition = {row:0, column:0};
-function predictCode(errorCode){
-    const tokens = esprima.tokenize(errorCode);
-    console.log(tokens);
-    if(!tokens[0]) return null;
-    switch (tokens[0].type) {
-        // case "Identifier":
-        //     return predictFromIdentifier(tokens);
-        case "Keyword":
-            if( tokens[0].value === "let" || tokens[0].value === "const" ||
-                tokens[0].value === "var"){
-                return predictAssignment(tokens);
-            }
-        // default:
-            // return null;
-    }
-    let i = 0;
-    let code = "";
-    while (i < tokens.length-1) {
-        if(tokens[i].type === "Identifier" && tokens[i+1].value === "("){
-            const result = predictCallExpression(tokens, i);
-            code += result.code;
-            i = result.index;
-        } else {
-            code += tokens[i].value;
-        }
-        i++;
-    }
-    return code;
-}
+let bCursorPosition = {row:0, column:0};
 
-function predictAssignment(tokens){
-    let code = tokens[0].value;
-    let index = 1;
-    if(tokens[index].type === "Identifier"){
-        code += ' ' + tokens[index].value + '=_;'
-    }
-    return code;
-}
 
 /**
  * 指定されたindexの前までのトークンをコードに変換して返す
@@ -71,88 +34,6 @@ function getCode(tokens, index){
     return code;
 }
 
-function predictExpression(code){
-    const tokens = esprima.tokenize(code);
-    let i = 0;
-    let code = "";
-    while (i < tokens.length-1) {
-        if(tokens[i].type === "Identifier" && tokens[i+1].value === "("){
-            const result = predictCallExpression(tokens, i);
-            code += result.code;
-            i = result.index;
-        } else {
-            code += tokens[i].value;
-        }
-        i++;
-    }
-    return code;
-}
-
-function predictCallExpression(tokens, index){
-    let code = tokens[index].value + tokens[index+1].value;
-    index += 2;
-    if (tokens.length <= index) return code + ")";
-    else {
-        let partOfCode = "";
-        while(index < tokens.length){
-            if(tokens[index].value === ','){
-                if(partOfCode === ''){
-                    code += '_,';
-                }else{
-                    if(isValidCode(partOfCode)){
-                        code += partOfCode + ',';
-                    }else{
-                        code += predictExpression(partOfCode);
-                    }
-                    partOfCode = "";
-                }
-            }else if(tokens[index].value === ')'){
-                if (partOfCode !== "" && isValidCode(partOfCode)) {
-                    code += partOfCode + ')';
-                    partOfCode = "";
-                } else code += ')';
-                break;
-            } else {
-                partOfCode += tokens[index].value;
-            }
-            index++;
-        }
-        return {"code":code, "index":index};
-    }
-}
-
-function predictFromIdentifier(tokens){
-    let code = tokens[0].value;
-    let index = 1;
-    if(tokens[index].value === '('){
-        code += '(';
-        index++;
-        let partOfCode = "";
-        while(index < tokens.length){
-            if( tokens[index].value === ','){
-                if(partOfCode !== "" && isValidCode(partOfCode)){
-                    code += partOfCode + ',';
-                    partOfCode = "";
-                }else code += '_,'
-            } else if(tokens[index].value === ')'){
-                if(partOfCode !== "" && isValidCode(partOfCode)){
-                    code += partOfCode + ');';
-                    partOfCode = "";
-                } else code += '_);';
-                break;
-            } else {
-                partOfCode += tokens[index].value;
-            }
-            index++;
-        }
-        return code;
-    }else if(tokens[index].value === '='){
-        code += '= _;';
-        return code;
-    }else{
-        return null;
-    }
-}
 
 /**
  * コードを与えてそれがJavaScriptの構文に沿っているかどうか判定する関数
@@ -168,24 +49,20 @@ function isValidCode(code){
     }
 }
 
-
+/**
+ * PEGjsのparserを生成して返す
+ * @return {[type]} [description]
+ */
 function createParser(){
     return peg.generate(fs.readFileSync("./pegjs_test/error_correction2.pegjs").toString());
 
 }
 const parser = createParser();
-function trimError(error) {
-    // const editor = getAceEditor();
-    // const editSession = editor.getSession();
-    // const document = editSession.getDocument();
-    // firstLines = document.getLines(0, error.lineNumber - 2);
-    // lastLines = document.getLines(error.lineNumber, document.getLength() - 1);
-    // errorCode = document.getLine(error.lineNumber - 1).trim();
-    // fixCode = parser.parse(errorCode);
-    // if(fixCode) lines = firstLines.concat([fixCode]).concat(lastLines);
-    // else lines = firstLines.concat(["_error('" + errorCode + "');"]).concat(lastLines);
-    // return lines.join('\n');
-
+/**
+ * PEGjsを用いて構文エラーのあるコードを書き換えて補完する
+ * @return {string}       補完されたコード
+ */
+function trimError() {
     const program = getAceEditor().getValue();
     fixCode = parser.parse(program);
     return fixCode;
@@ -210,7 +87,7 @@ function blockByCode(code, workspace, count=0){
     }
     if(count === 0){
         const editor = getAceEditor();
-        cursorPosition = editor.getCursorPosition();
+        bCursorPosition = editor.getCursorPosition();
     }
     setCurrentWorkspace(workspace);
     try {
@@ -236,14 +113,14 @@ function codeToBlock(program, count=0) {
     if(count > 10){
         console.log("codeToBlock()が10回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         editor.setValue(firstProgram1,-1);
-        editor.moveCursorToPosition(cursorPosition);
+        editor.moveCursorToPosition(bCursorPosition);
         return;
     }
     if(!program) program = getAceEditor().getValue();
     if(count === 0) {
         firstProgram1 = program;
         const editor = getAceEditor();
-        cursorPosition = editor.getCursorPosition();
+        bCursorPosition = editor.getCursorPosition();
     }
     setCurrentWorkspace(workspace);
     try {
@@ -256,8 +133,7 @@ function codeToBlock(program, count=0) {
         currentWorkspace.clear();
     } catch (e) {
         console.log(e);
-        const fixCode = trimError(e);
-        editor.setValue(fixCode);
+        const fixCode = trimError();
         codeToBlock(fixCode, count+1);
         return;
     }
@@ -886,7 +762,7 @@ function assignmentExpressionBlock(node, isStatement) {
         if(isStatement) block = createBlock('assingment_expression_statement');
         else block = createBlock("assingment_expression");
         const leftBlock = blockByExpression(node.left, false);
-        combineIntoBlock(block, leftBlock);
+        combineIntoBlock(block, leftBlock, 0);
         switch(node.operator){
             case '=':
                 block.getField('OP').setValue('EQ');
@@ -914,7 +790,7 @@ function assignmentExpressionBlock(node, isStatement) {
                   node.operator + "\n\n面倒くさくて実装していません。本当にごめんなさい。")
         }
         var rightHandBlock = blockByExpression(node.right, false);
-        combineIntoBlock(block, rightHandBlock);
+        combineIntoBlock(block, rightHandBlock,1);
         return block;
     }
 }
@@ -1045,8 +921,8 @@ function logicalExpressionBlock(node){
     }else{
         errorMessage("logicalExpressionBlock()において次のnode.operatorが存在しない: " + node.operator);
     }
-    combineIntoBlock(block, leftBlock);
-    combineIntoBlock(block, rightBlock);
+    combineIntoBlock(block, leftBlock,0);
+    combineIntoBlock(block, rightBlock,1);
 
     return block;
 }
@@ -1157,8 +1033,8 @@ function binaryExpressionBlock(node) {
     }
     var leftBlock = blockByExpression(node.left,false);
     var rightBlock = blockByExpression(node.right,false);
-    combineIntoBlock(block, leftBlock);
-    combineIntoBlock(block, rightBlock);
+    combineIntoBlock(block, leftBlock, 0);
+    combineIntoBlock(block, rightBlock, 1);
     return block;
 }
 

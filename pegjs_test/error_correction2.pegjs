@@ -730,7 +730,7 @@ Arguments
 
 ArgumentList
     = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
-    / __ "," tail:ArgumentList {return "_," + tail;}
+    / __ "," __ tail:ArgumentList {return "_," + tail;}
     / head:AssignmentExpression {return head;}
     / __ {return "_";}
 
@@ -1319,10 +1319,10 @@ IfStatement
    }
 
 IterationStatement
-  = code:$(DoToken __
+  = code:(DoToken __
     body:Statement __
     WhileToken __ "(" __ test:Expression __ ")" EOS)
-    { return code; }
+    { return code.join(""); }
   / DoToken __
     body:Statement? __
     WhileToken? __ "("? __ test:Expression? __ ")"? EOS?
@@ -1332,9 +1332,9 @@ IterationStatement
         result += "while(" + (test ? test : "_") + ");"
         return result;
     }
-  / code:$(WhileToken __ "(" __ test:Expression __ ")" __
+  / code:(WhileToken __ "(" __ test:Expression __ ")" __
     body:Statement)
-    { return code; }
+    { return code.join(""); }
   / WhileToken __ "("? __ test:Expression? __ ")"? __
     body:Statement? {
       let result = "while(";
@@ -1347,7 +1347,7 @@ IterationStatement
   }
 
 
-  / code:$(ForToken __
+  / code:(ForToken __
     "(" __
     init:(ExpressionNoIn __)? ";" __
     test:(Expression __)? ";" __
@@ -1355,17 +1355,17 @@ IterationStatement
     ")" __
     body:Statement)
     {
-      return code;
+      return code.join("");
     }
-  / code:$(ForToken __
+  / code:(ForToken __
     "(" __
     VarKind __ declarations:VariableDeclarationListNoIn __ ";" __
-    test:(Expression __)? ";" __
+    test:(e:Expression w:__{return e + w;})? ";" __
     update:(Expression __)?
     ")" __
     body:Statement)
     {
-      return code;
+      return code.join("");
     }
   / ForToken __
     "("? __
@@ -1521,11 +1521,11 @@ FunctionDeclaration
 
 
 FunctionExpression
-  = code:$(FunctionToken __ id:(Identifier __)?
-    "(" __ params:(FormalParameterList __)? ")" __
+  = code:(FunctionToken __ id:(x:Identifier __ {return x;})?
+    "(" __ params:(x:FormalParameterList __{return x;})? ")" __
     "{" __ body:FunctionBody __ "}")
     {
-      return code;
+      return code.join("");
     }
   / FunctionToken __ id:(x:Identifier __ {return x;})?
   "("? __ params:(x:FormalParameterList __{return x;})? ")"? __

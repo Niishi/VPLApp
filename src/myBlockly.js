@@ -93,7 +93,7 @@ Blockly.Block.prototype.myCollapse = function(collapsed){
 };
 
 Blockly.Generator.prototype.valueToCode = function(block, name, outerOrder) {
-    const emptyCode = '_';
+    const emptyCode = '';
     if (isNaN(outerOrder)) {
         goog.asserts.fail('Expecting valid order from block "%s".', block.type);
     }

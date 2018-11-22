@@ -255,7 +255,6 @@ function insertTextBox(textBox, word){
 let block = null;
 document.getElementById("blockTextBox").onkeyup = function(e){
     let textBox = document.getElementById("blockTextBox");
-
     const c = completion(e);    //'('や""などの補完作業を行う
     if(c) insertTextBox(textBox, c);
     let clientRect = textBox.getBoundingClientRect();
