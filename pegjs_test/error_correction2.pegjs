@@ -739,7 +739,7 @@ LeftHandSideExpression
   / NewExpression
 
 PostfixExpression
-  = code:(argument:LeftHandSideExpression _ operator:PostfixOperator) {
+  = code:(!Literal argument:LeftHandSideExpression _ operator:PostfixOperator) {
       return code.join("");
     }
   / LeftHandSideExpression
@@ -750,7 +750,7 @@ PostfixOperator
 
 UnaryExpression
   = PostfixExpression
-  / operator:UnaryOperator __ argument:UnaryExpression {
+  / operator:UnaryOperator __  argument:(UnaryExpression) {
       return operator + argument;
     }
 
@@ -1193,8 +1193,8 @@ Statement
   / DebuggerStatement
 
 Block
-  = "{" __ body:(x:StatementList __{return x;})? "}" {
-      let result = "{" + (body ? body : "") + "}";
+  = "{" w2:__ body:(x:StatementList w:__{return x + w;})? "}" {
+      let result = "{" + w2 + (body ? body : "") + "}";
     return result;
   }
   /* = "{" __ body:(StatementList __)? "}" {
@@ -1206,7 +1206,7 @@ Block
 
 StatementList
 /* = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); } */
-  = head:Statement tail:(__ x:Statement{return x})* { return head + tail.join(""); }
+  = head:Statement tail:(w:__ x:Statement{return w + x})* { return head + tail.join(""); }
 
 VariableStatement
   = code:(VarKind __ declarations:VariableDeclarationList x:EOS) {

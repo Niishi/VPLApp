@@ -65,6 +65,7 @@ const parser = createParser();
 function trimError() {
     const program = getAceEditor().getValue();
     fixCode = parser.parse(program);
+    console.log(fixCode);
     return fixCode;
 }
 
@@ -80,9 +81,8 @@ function insertStr(str, index, insert) {
 }
 
 function blockByCode(code, workspace, count=0){
-    console.log(code);
-    if(count > 10){
-        console.log("blockByCode()が10回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
+    if(count > 1){
+        console.log("blockByCode()が1回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         return "error";
     }
     if(count === 0){
@@ -110,8 +110,8 @@ var blockX = 100;
 var blockMargin = 30;
 let firstProgram1 = "";
 function codeToBlock(program, count=0) {
-    if(count > 10){
-        console.log("codeToBlock()が10回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
+    if(count > 2){
+        console.log("codeToBlock()が2回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         editor.setValue(firstProgram1,-1);
         editor.moveCursorToPosition(bCursorPosition);
         return;
@@ -132,7 +132,6 @@ function codeToBlock(program, count=0) {
         var ast = esprima.parseModule(program, options);
         currentWorkspace.clear();
     } catch (e) {
-        console.log(e);
         const fixCode = trimError();
         codeToBlock(fixCode, count+1);
         return;
