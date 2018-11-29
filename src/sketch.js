@@ -1,14 +1,18 @@
-setup = function(){
-  var canvas = createCanvas(800, 600);
-  canvas.parent(sketch);
-};
+if (x) {
+  println(x);
+}
 
-var x = 0;
+ = ;
 
-draw = function(){
-  background(mouseX, mouseY, 100);
-  ellipse(x,10,20,20);
-  x++;
-  textSize(29);
-  text(mouseX + ',' + mouseY + 100, 100, 100);
-};
+for (var i = 0; i < 10; i++ ) {
+  x = function( ){
+  };
+  println(i);
+  if (x > 0 && y < 10 || isOk()) {
+    println(x);
+  }
+}
+
+x;
+
+;
