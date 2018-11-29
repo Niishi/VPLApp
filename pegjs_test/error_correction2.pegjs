@@ -241,6 +241,7 @@ Literal
   / StringLiteral
   / RegularExpressionLiteral
 
+
 NullLiteral
   /* = NullToken { return { type: "Literal", value: null }; } */
   = NullToken { return "null" }
@@ -291,6 +292,7 @@ ExponentPart
 
 ExponentIndicator
   = "e"i
+
 
 SignedInteger
   = [+-]? DecimalDigit+
