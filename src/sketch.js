@@ -1,9 +1,6 @@
 if (x) {
   println(x);
 }
-
- = ;
-
 for (var i = 0; i < 10; i++ ) {
   x = function( ){
   };
@@ -12,7 +9,3 @@ for (var i = 0; i < 10; i++ ) {
     println(x);
   }
 }
-
-x;
-
-;
