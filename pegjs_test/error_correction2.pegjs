@@ -147,9 +147,7 @@ SingleLineComment
   = "//" (!LineTerminator SourceCharacter)*
 
 Identifier
-  = ")" __ Expression __ "(" {return "OK";}
-  /!ReservedWord name:IdentifierName { return name; }
-
+  = !ReservedWord name:IdentifierName { return name; }
 
 IdentifierName "identifier"
   = code:$(head:IdentifierStart tail:IdentifierPart*) {
@@ -243,7 +241,6 @@ Literal
   / StringLiteral
   / RegularExpressionLiteral
 
-
 NullLiteral
   /* = NullToken { return { type: "Literal", value: null }; } */
   = NullToken { return "null" }
@@ -294,7 +291,6 @@ ExponentPart
 
 ExponentIndicator
   = "e"i
-
 
 SignedInteger
   = [+-]? DecimalDigit+
@@ -540,7 +536,7 @@ EOF
 /* ----- A.3 Expressions ----- */
 
 PrimaryExpression
-    = ThisToken {     return "this"; }
+    = ThisToken { return "this"; }
   /* = ThisToken { return { type: "ThisExpression" }; } */
   /* / "#" __ Expression __ "#" {return "ok";} */
   / "aaa" __ Expression __ "bbb" {return "ok";}
@@ -548,43 +544,45 @@ PrimaryExpression
   / Literal
   / ArrayLiteral
   / ObjectLiteral
-  / "(" __ expression:Expression __ ")" { return "(" + (expression ? expression : "_") + ")"; }
+  / "(" __ expression:Expression __ ")" { return "(" + expression + ")"; }
 ArrayLiteral
-  = code:("[" __ elision:(Elision __)? "]") {
+  = "[" __ elision:(Elision __)? "]" {
       // return {
       //   type:     "ArrayExpression",
       //   elements: optionalList(extractOptional(elision, 0))
       // };
-      return code.join("");
+      return optionalList(extractOptional(elision, 0));
     }
-  / code:("[" __ elements:ElementList __ "]") {
-      return code.join("");
+  / "[" __ elements:ElementList __ "]" {
+      // return {
+      //   type:     "ArrayExpression",
+      //   elements: elements
+      // };
+      return elements;
     }
-  / code:("[" __ elements:ElementList __ "," __ elision:(e:Elision w:__{return e + w;})? "]") {
-      // return elements.concat(optionalList(extractOptional(elision, 0)));
-      return code.join("");
+  / "[" __ elements:ElementList __ "," __ elision:(Elision __)? "]" {
+      // return {
+      //   type:     "ArrayExpression",
+      //   elements: elements.concat(optionalList(extractOptional(elision, 0)))
+      // };
+      return elements.concat(optionalList(extractOptional(elision, 0)));
     }
 
 ElementList
   = head:(
-      elision:(e:Elision w:__{return e + w;})? element:AssignmentExpression {
-        // return optionalList(extractOptional(elision, 0)).concat(element);
-        return (elision ? elision : "")  + element;
+      elision:(Elision __)? element:AssignmentExpression {
+        return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )
     tail:(
-      w1:__ "," w2:__ elision:(e:Elision w:__{return e + w;})? element:AssignmentExpression {
-        // return optionalList(extractOptional(elision, 0)).concat(element);
-        return w1 + "," + w2 + (elision ? elision : "") + element;
+      __ "," __ elision:(Elision __)? element:AssignmentExpression {
+        return optionalList(extractOptional(elision, 0)).concat(element);
       }
     )*
-    {
-        return head + tail.join("");
-        // return Array.prototype.concat.apply(head, tail);
-    }
+    { return Array.prototype.concat.apply(head, tail); }
 
 Elision
-  = "," commas:(x:__ ","{return x + ","})* {return "," +  commas.join("");}
+  = "," commas:(__ ",")* { return filledArray(commas.length + 1, null); }
 
 ObjectLiteral
   /* = "{" __ "}" { return { type: "ObjectExpression", properties: [] }; }
@@ -1170,9 +1168,7 @@ AssignmentOperator
   / "|="
 
 Expression
-  = head:AssignmentExpression tail:(w1:__ "," w2:__ e:AssignmentExpression?{
-      return w1 + "," + w2 + (e ? e : "_");
-  })* {
+  = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
       return head + tail.join("");
       // return tail.length > 0
       //   ? { type: "SequenceExpression", expressions: buildList(head, tail, 3) }
@@ -1180,9 +1176,7 @@ Expression
     }
 
 ExpressionNoIn
-  = head:AssignmentExpressionNoIn tail:(w1:__ "," w2:__ e:AssignmentExpressionNoIn{
-      return w1 + "," + w2 + (e ? e : "_");
-  })* {
+  = head:AssignmentExpressionNoIn tail:(__ "," __ AssignmentExpressionNoIn)* {
       return head + tail.join("");
       // return tail.length > 0
       //   ? { type: "SequenceExpression", expressions: buildList(head, tail, 3) }
