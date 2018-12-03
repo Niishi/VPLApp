@@ -538,8 +538,6 @@ EOF
 PrimaryExpression
     = ThisToken { return "this"; }
   /* = ThisToken { return { type: "ThisExpression" }; } */
-  /* / "#" __ Expression __ "#" {return "ok";} */
-  / "aaa" __ Expression __ "bbb" {return "ok";}
   / Identifier
   / Literal
   / ArrayLiteral
@@ -731,17 +729,10 @@ Arguments
     }
 
 ArgumentList
-    = head:AssignmentExpression?
-      tail:(w1:__ "," w2:__ e:AssignmentExpression?{
-          return w1 + "," + w2 + (e ? e : "");
-      })*{
-          let result =  (head ? head : "") + tail.join("");
-          return result;
-      }
-    /* = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
+    = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
     / __ "," __ tail:ArgumentList {return "_," + tail;}
     / head:AssignmentExpression {return head;}
-    / __ {return "_";} */
+    / __ {return "_";}
 
 LeftHandSideExpression
   = CallExpression
@@ -786,8 +777,12 @@ MultiplicativeExpression
     {
         let result = (head ? head : "_");
         return result + tail.join(""); }
-    / tail:(ope:MultiplicativeOperator w1:__ test:MultiplicativeExpression? w2:__ {
-        return ope + w1 + (test ? test : "") + w2;
+    / __?  ope:MultiplicativeOperator __ tail:(test:MultiplicativeExpression{
+        if(test){
+            return ope + test;
+        }else{
+            return ope + "_";
+        }
     })*{
         return "_" + tail.join("");
     }
@@ -804,11 +799,6 @@ AdditiveExpression
         return ope + (test ? test : "_");
     })*
     { return head + tail.join("") }
-    /* / tail:(ope:AdditiveOperator w1:__ test:MultiplicativeExpression? w2:__{
-        return ope + w1 + (test ? test : "") + w2;
-    })*{
-        return "_" + tail.join("");
-    } */
     / __? ope:AdditiveOperator __ tail:(test:AdditiveExpression{
         return ope + (test ? test : "_");
     })*{
@@ -871,7 +861,7 @@ RelationalExpressionNoIn
       else return ope + "_";
   })*
   { return head + tail.join(""); }
-  / __? ope:RelationalOperatorNoIn __ tail:(test:RelationalExpressionNoIn?{
+  / __? ope:RelationalOperatorNoIn __ tail:(test:RelationalExpression?{
       if(test) return ope + test;
       else return ope + "_";
   }){
@@ -1186,8 +1176,7 @@ ExpressionNoIn
 /* ----- A.4 Statements ----- */
 
 Statement
-  = "#" __ Expression __ "#" {return "ok";}
-  / Block
+  = Block
   / VariableStatement
   / EmptyStatement
   / ExpressionStatement
