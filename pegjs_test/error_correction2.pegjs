@@ -148,6 +148,7 @@ SingleLineComment
 
 Identifier
   = !ReservedWord name:IdentifierName { return name; }
+  /"yuya" __ Expression __ "yamanashi" {return "OK";}
 
 IdentifierName "identifier"
   = code:$(head:IdentifierStart tail:IdentifierPart*) {
@@ -241,6 +242,7 @@ Literal
   / StringLiteral
   / RegularExpressionLiteral
 
+
 NullLiteral
   /* = NullToken { return { type: "Literal", value: null }; } */
   = NullToken { return "null" }
@@ -291,6 +293,7 @@ ExponentPart
 
 ExponentIndicator
   = "e"i
+
 
 SignedInteger
   = [+-]? DecimalDigit+
@@ -536,51 +539,53 @@ EOF
 /* ----- A.3 Expressions ----- */
 
 PrimaryExpression
-    = ThisToken { return "this"; }
+    = ThisToken {     return "this"; }
   /* = ThisToken { return { type: "ThisExpression" }; } */
+  / "aaa" __ Expression __ "bbb"
+  /* / "#" __ Expression __ "bbb" */
+  / "bbb" __ Expression __ "#"
+  / "1" __ Expression __ "2"
   / Identifier
   / Literal
   / ArrayLiteral
   / ObjectLiteral
-  / "(" __ expression:Expression __ ")" { return "(" + expression + ")"; }
+  / "(" __ expression:Expression __ ")" { return "(" + (expression ? expression : "_") + ")"; }
 ArrayLiteral
-  = "[" __ elision:(Elision __)? "]" {
+  = code:("[" __ elision:(Elision __)? "]") {
       // return {
       //   type:     "ArrayExpression",
       //   elements: optionalList(extractOptional(elision, 0))
       // };
-      return optionalList(extractOptional(elision, 0));
+      return code.join("");
     }
-  / "[" __ elements:ElementList __ "]" {
-      // return {
-      //   type:     "ArrayExpression",
-      //   elements: elements
-      // };
-      return elements;
+  / code:("[" __ elements:ElementList __ "]") {
+      return code.join("");
     }
-  / "[" __ elements:ElementList __ "," __ elision:(Elision __)? "]" {
-      // return {
-      //   type:     "ArrayExpression",
-      //   elements: elements.concat(optionalList(extractOptional(elision, 0)))
-      // };
-      return elements.concat(optionalList(extractOptional(elision, 0)));
+  / code:("[" __ elements:ElementList __ "," __ elision:(e:Elision w:__{return e + w;})? "]") {
+      // return elements.concat(optionalList(extractOptional(elision, 0)));
+      return code.join("");
     }
 
 ElementList
   = head:(
-      elision:(Elision __)? element:AssignmentExpression {
-        return optionalList(extractOptional(elision, 0)).concat(element);
+      elision:(e:Elision w:__{return e + w;})? element:AssignmentExpression {
+        // return optionalList(extractOptional(elision, 0)).concat(element);
+        return (elision ? elision : "")  + element;
       }
     )
     tail:(
-      __ "," __ elision:(Elision __)? element:AssignmentExpression {
-        return optionalList(extractOptional(elision, 0)).concat(element);
+      w1:__ "," w2:__ elision:(e:Elision w:__{return e + w;})? element:AssignmentExpression {
+        // return optionalList(extractOptional(elision, 0)).concat(element);
+        return w1 + "," + w2 + (elision ? elision : "") + element;
       }
     )*
-    { return Array.prototype.concat.apply(head, tail); }
+    {
+        return head + tail.join("");
+        // return Array.prototype.concat.apply(head, tail);
+    }
 
 Elision
-  = "," commas:(__ ",")* { return filledArray(commas.length + 1, null); }
+  = "," commas:(x:__ ","{return x + ","})* {return "," +  commas.join("");}
 
 ObjectLiteral
   /* = "{" __ "}" { return { type: "ObjectExpression", properties: [] }; }
@@ -729,10 +734,16 @@ Arguments
     }
 
 ArgumentList
-    = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
+    = head:AssignmentExpression? tail:(w1:__ "," w2:__ e:AssignmentExpression?{
+        return w1 + "," + w2 + (e ? e : "_")
+    })*{
+        let result = (head ? head : "_");
+        return result + tail.join("");
+    }
+    /* = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
     / __ "," __ tail:ArgumentList {return "_," + tail;}
     / head:AssignmentExpression {return head;}
-    / __ {return "_";}
+    / __ {return "_";} */
 
 LeftHandSideExpression
   = CallExpression
@@ -767,7 +778,8 @@ UnaryOperator
 
 MultiplicativeExpression
   = head:UnaryExpression
-    tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?{
+    tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?
+    {
         if(test){
             return ope + test;
         }else{
@@ -777,6 +789,8 @@ MultiplicativeExpression
     {
         let result = (head ? head : "_");
         return result + tail.join(""); }
+
+
     / __?  ope:MultiplicativeOperator __ tail:(test:MultiplicativeExpression{
         if(test){
             return ope + test;
@@ -787,6 +801,18 @@ MultiplicativeExpression
         return "_" + tail.join("");
     }
     / UnaryExpression
+
+    /* 以下のように書きたくなるが、「何もない状態」を受け付けてしまうので書けない */
+/* MultiplicativeExpression
+    = head:UnaryExpression?
+    tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?{
+          if(test){
+              return ope + test;
+          }else{
+              return ope + "_";
+          }
+    })*{ return (head ? head : "_") + tail.join("")} */
+
 
 MultiplicativeOperator
   = $("*" !"=")
@@ -1158,7 +1184,9 @@ AssignmentOperator
   / "|="
 
 Expression
-  = head:AssignmentExpression tail:(__ "," __ AssignmentExpression)* {
+  = head:AssignmentExpression tail:(w1:__ "," w2:__ e:AssignmentExpression?{
+      return w1 + "," + w2 + (e ? e : "_");
+  })* {
       return head + tail.join("");
       // return tail.length > 0
       //   ? { type: "SequenceExpression", expressions: buildList(head, tail, 3) }
@@ -1166,7 +1194,9 @@ Expression
     }
 
 ExpressionNoIn
-  = head:AssignmentExpressionNoIn tail:(__ "," __ AssignmentExpressionNoIn)* {
+  = head:AssignmentExpressionNoIn tail:(w1:__ "," w2:__ e:AssignmentExpressionNoIn{
+      return w1 + "," + w2 + (e ? e : "_");
+  })* {
       return head + tail.join("");
       // return tail.length > 0
       //   ? { type: "SequenceExpression", expressions: buildList(head, tail, 3) }
@@ -1176,7 +1206,8 @@ ExpressionNoIn
 /* ----- A.4 Statements ----- */
 
 Statement
-  = Block
+  = "(" Expression ")"{return "ok"}
+  / Block
   / VariableStatement
   / EmptyStatement
   / ExpressionStatement
@@ -1580,7 +1611,7 @@ Program
 SourceElements
   = head:SourceElement tail:(__ x:SourceElement{return x;})* {
       return head + tail.join("");
-    }
+  }
 
 SourceElement
   = Statement
