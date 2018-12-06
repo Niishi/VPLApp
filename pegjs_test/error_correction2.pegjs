@@ -147,9 +147,8 @@ SingleLineComment
   = "//" (!LineTerminator SourceCharacter)*
 
 Identifier
-  = ")" __ Expression __ "(" {return "OK";}
-  /!ReservedWord name:IdentifierName { return name; }
-
+  = !ReservedWord name:IdentifierName { return name; }
+  /"yuya" __ Expression __ "yamanashi" {return "OK";}
 
 IdentifierName "identifier"
   = code:$(head:IdentifierStart tail:IdentifierPart*) {
@@ -542,6 +541,8 @@ EOF
 PrimaryExpression
     = ThisToken {     return "this"; }
   /* = ThisToken { return { type: "ThisExpression" }; } */
+  / "aaa" __ Expression __ "bbb"
+  / "#" __ Expression __ "bbb"
   / Identifier
   / Literal
   / ArrayLiteral
@@ -1182,7 +1183,8 @@ ExpressionNoIn
 /* ----- A.4 Statements ----- */
 
 Statement
-  = Block
+  = "(" Expression ")"{return "ok"}
+  / Block
   / VariableStatement
   / EmptyStatement
   / ExpressionStatement
