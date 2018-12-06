@@ -542,7 +542,9 @@ PrimaryExpression
     = ThisToken {     return "this"; }
   /* = ThisToken { return { type: "ThisExpression" }; } */
   / "aaa" __ Expression __ "bbb"
-  / "#" __ Expression __ "bbb"
+  /* / "#" __ Expression __ "bbb" */
+  / "bbb" __ Expression __ "#"
+  / "1" __ Expression __ "2"
   / Identifier
   / Literal
   / ArrayLiteral
@@ -732,10 +734,16 @@ Arguments
     }
 
 ArgumentList
-    = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
+    = head:AssignmentExpression? tail:(w1:__ "," w2:__ e:AssignmentExpression?{
+        return w1 + "," + w2 + (e ? e : "_")
+    })*{
+        let result = (head ? head : "_");
+        return result + tail.join("");
+    }
+    /* = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
     / __ "," __ tail:ArgumentList {return "_," + tail;}
     / head:AssignmentExpression {return head;}
-    / __ {return "_";}
+    / __ {return "_";} */
 
 LeftHandSideExpression
   = CallExpression
@@ -770,7 +778,8 @@ UnaryOperator
 
 MultiplicativeExpression
   = head:UnaryExpression
-    tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?{
+    tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?
+    {
         if(test){
             return ope + test;
         }else{
@@ -780,6 +789,8 @@ MultiplicativeExpression
     {
         let result = (head ? head : "_");
         return result + tail.join(""); }
+
+
     / __?  ope:MultiplicativeOperator __ tail:(test:MultiplicativeExpression{
         if(test){
             return ope + test;
@@ -790,6 +801,18 @@ MultiplicativeExpression
         return "_" + tail.join("");
     }
     / UnaryExpression
+
+    /* 以下のように書きたくなるが、「何もない状態」を受け付けてしまうので書けない */
+/* MultiplicativeExpression
+    = head:UnaryExpression?
+    tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?{
+          if(test){
+              return ope + test;
+          }else{
+              return ope + "_";
+          }
+    })*{ return (head ? head : "_") + tail.join("")} */
+
 
 MultiplicativeOperator
   = $("*" !"=")
@@ -1588,7 +1611,7 @@ Program
 SourceElements
   = head:SourceElement tail:(__ x:SourceElement{return x;})* {
       return head + tail.join("");
-    }
+  }
 
 SourceElement
   = Statement
