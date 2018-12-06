@@ -19,22 +19,6 @@ function setCurrentWorkspace(workspace){
 }
 let bCursorPosition = {row:0, column:0};
 
-
-/**
- * 指定されたindexの前までのトークンをコードに変換して返す
- * @param  {[type]} tokens [description]
- * @param  {[type]} index  [description]
- * @return {[type]}        [description]
- */
-function getCode(tokens, index){
-    let code = "";
-    for(let i = 0; i < index; i++){
-        code += tokens[i].value;
-    }
-    return code;
-}
-
-
 /**
  * コードを与えてそれがJavaScriptの構文に沿っているかどうか判定する関数
  * @param  {string}  code 正しいかどうか判断したいJavaScript
@@ -47,6 +31,29 @@ function isValidCode(code){
     } catch(e){
         return false;
     }
+}
+
+function addWhiteSpaces(tokens){
+    let result = [];
+    result.push(tokens[0]);
+    for(let i = 0; i < tokens.length - 1; i++){
+        token = tokens[i];
+        nextToken = tokens[i+1];
+        l1 = token.loc.start.line;
+        l2 = nextToken.loc.start.line;
+        c1 = token.loc.end.column;
+        c2 = nextToken.loc.end.column;
+        loc1 = token.loc;
+        loc2 = nextToken.loc;
+        let w = "";
+        if(l1 !== l2) w += "\n";
+        for(let j = c1; j < c2; j++){
+            w += " ";
+        }
+        result.push(w);
+        result.push(tokens[i+1]);
+    }
+    return result;
 }
 
 /**
@@ -65,7 +72,6 @@ const parser = createParser();
 function trimError() {
     const program = getAceEditor().getValue();
     fixCode = parser.parse(program);
-    console.log(fixCode);
     return fixCode;
 }
 
@@ -92,7 +98,9 @@ function blockByCode(code, workspace, count=0){
     setCurrentWorkspace(workspace);
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
-        var ast = esprima.parseModule(code, {tolerant: true, comment: true});
+        var ast = esprima.parseScript(code, { tolerant: true, tokens: true, loc:true });
+        console.log(ast.tokens);
+        console.log(addWhiteSpaces(ast.tokens));
     } catch (e) {
         let fixCode = parser.parse(code);
         return blockByCode(fixCode, workspace, count+1);
@@ -126,10 +134,13 @@ function codeToBlock(program, count=0) {
     try {
         const options = {
             loc: true,
+            tokens: true,
             comment: true,
             tolerant: false
         };
-        var ast = esprima.parseModule(program, options);
+        var ast = esprima.parseScript(program, options);
+        console.log(ast.tokens);
+        console.log(addWhiteSpaces(ast.tokens));
         currentWorkspace.clear();
     } catch (e) {
         const fixCode = trimError();
@@ -181,6 +192,7 @@ function blockByStatement(statement) {
         }
     }
     let block = null;
+    console.log(statement);
     switch(statement.type){
         case 'BlockStatement':
             block = blockStatementBlock(statement);
