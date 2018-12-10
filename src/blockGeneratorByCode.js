@@ -134,7 +134,7 @@ function blockByCode(code, workspace, count=0){
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
         var ast = esprima.parseScript(code, { tolerant: true, tokens: true, loc:true });
-        tokens = ast.tokens;
+        tokens = addWhiteSpaces(ast.tokens);
     } catch (e) {
         let fixCode = parser.parse(code);
         return blockByCode(fixCode, workspace, count+1);
@@ -173,7 +173,7 @@ function codeToBlock(program, count=0) {
             tolerant: false
         };
         var ast = esprima.parseScript(program, options);
-        tokens = ast.tokens;
+        tokens = addWhiteSpaces(ast.tokens);
         currentWorkspace.clear();
     } catch (e) {
         const fixCode = trimError();
