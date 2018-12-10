@@ -3,6 +3,9 @@ const estraverse = require('estraverse');
 const prompt     = require('electron-prompt');
 const peg        = require("pegjs");
 
+let tokens = [];    //構文解析した後のトークンが入る
+var currentWorkspace;
+let bCursorPosition = {row:0, column:0};
 
 function createFunctionTuple(name, argLengthList){
     return {"name": name, "argLengthList": argLengthList};
@@ -13,11 +16,9 @@ var callFunctionNameList = [createFunctionTuple("fill",[3]),
                             createFunctionTuple("rect", [4]),
                             createFunctionTuple("noStroke",[0])];
 
-var currentWorkspace;
 function setCurrentWorkspace(workspace){
     currentWorkspace = workspace;
 }
-let bCursorPosition = {row:0, column:0};
 
 /**
  * コードを与えてそれがJavaScriptの構文に沿っているかどうか判定する関数
@@ -52,6 +53,40 @@ function addWhiteSpaces(tokens){
         }
         result.push(w);
         result.push(tokens[i+1]);
+    }
+    return result;
+}
+
+/**
+ * 与えられたStatement内にあるトークンを空白トークンも含めて返す
+ * @param  {[type]} statement [description]
+ * @return {[type]}           [description]
+ */
+function getTokensOfStatement(statement){
+    let result = [];
+    const START = statement.range[0];
+    const END   = statement.range[1];
+    let preToken = null;
+    for(var i = 0; i < tokens.length; i++){
+        const token = tokens[i];
+        if(token.range[0] === START){
+            preToken = token;
+            result.push(token);
+        }else if(token.range[0] > START && token.range[1] <= END){
+            if(preToken.range[1] < token.range[0]){
+                let w = "";
+                if(preToken.loc.end.line < token.loc.start.line){
+                    w += '\n';
+                    for(var i = 0; i < token.loc.start.column; i++){
+                        w += ' ';
+                    }
+                }
+            }
+
+            preToken = token;
+            result.push(token);
+        }
+        if(token.range[1] === END) break;
     }
     return result;
 }
@@ -99,8 +134,7 @@ function blockByCode(code, workspace, count=0){
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
         var ast = esprima.parseScript(code, { tolerant: true, tokens: true, loc:true });
-        console.log(ast.tokens);
-        console.log(addWhiteSpaces(ast.tokens));
+        tokens = ast.tokens;
     } catch (e) {
         let fixCode = parser.parse(code);
         return blockByCode(fixCode, workspace, count+1);
@@ -139,8 +173,7 @@ function codeToBlock(program, count=0) {
             tolerant: false
         };
         var ast = esprima.parseScript(program, options);
-        console.log(ast.tokens);
-        console.log(addWhiteSpaces(ast.tokens));
+        tokens = ast.tokens;
         currentWorkspace.clear();
     } catch (e) {
         const fixCode = trimError();
@@ -193,6 +226,7 @@ function blockByStatement(statement) {
     }
     let block = null;
     console.log(statement);
+
     switch(statement.type){
         case 'BlockStatement':
             block = blockStatementBlock(statement);
