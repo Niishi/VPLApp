@@ -725,7 +725,7 @@ CallExpression
     }
 
 Arguments
-  = "(" args:(ArgumentList )? ")"? {
+  = "(" args:(ArgumentList )? ")" {
       let result = "(";
       if(args === "_") return result + ")";
       else result += args ? args : "";
@@ -734,16 +734,16 @@ Arguments
     }
 
 ArgumentList
-    = head:AssignmentExpression? tail:(w1:__ "," w2:__ e:AssignmentExpression?{
+    /* = head:AssignmentExpression? tail:(w1:__ "," w2:__ e:AssignmentExpression?{
         return w1 + "," + w2 + (e ? e : "_")
     })*{
         let result = (head ? head : "_");
         return result + tail.join("");
-    }
-    /* = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
+    } */
+    = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
     / __ "," __ tail:ArgumentList {return "_," + tail;}
     / head:AssignmentExpression {return head;}
-    / __ {return "_";} */
+    / __ {return "_";}
 
 LeftHandSideExpression
   = CallExpression

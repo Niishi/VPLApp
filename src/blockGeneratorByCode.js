@@ -34,7 +34,7 @@ function isValidCode(code){
     }
 }
 
-function addWhiteSpaces(tokens){
+function createTokensWithWhiteSpace(tokens){
     let result = [];
     result.push(tokens[0]);
     for(let i = 0; i < tokens.length - 1; i++){
@@ -44,15 +44,28 @@ function addWhiteSpaces(tokens){
         l2 = nextToken.loc.start.line;
         c1 = token.loc.end.column;
         c2 = nextToken.loc.end.column;
-        loc1 = token.loc;
-        loc2 = nextToken.loc;
+
+        start = token.range[1];
+        end = token.range[0];
         let w = "";
         if(l1 !== l2) w += "\n";
         for(let j = c1; j < c2; j++){
             w += " ";
         }
-        result.push(w);
-        result.push(tokens[i+1]);
+        result.push(createToken("WhiteSpace", w, [start, end]));
+        result.push(tokens[i + 1]);
+    }
+    return result;
+}
+
+function createToken(type, value, range){
+    return {"type": type, "value": value, "range":range};
+}
+
+function createCodeByTokens(tokens){
+    let result = "";
+    for(token of tokens){
+        result += token.value;
     }
     return result;
 }
@@ -63,30 +76,19 @@ function addWhiteSpaces(tokens){
  * @return {[type]}           [description]
  */
 function getTokensOfStatement(statement){
-    let result = [];
-    const START = statement.range[0];
-    const END   = statement.range[1];
-    let preToken = null;
+    let result      = [];
+    const START     = statement.range[0];
+    const END       = statement.range[1];
+    let isFirst     = true;
     for(var i = 0; i < tokens.length; i++){
         const token = tokens[i];
-        if(token.range[0] === START){
-            preToken = token;
-            result.push(token);
-        }else if(token.range[0] > START && token.range[1] <= END){
-            if(preToken.range[1] < token.range[0]){
-                let w = "";
-                if(preToken.loc.end.line < token.loc.start.line){
-                    w += '\n';
-                    for(var i = 0; i < token.loc.start.column; i++){
-                        w += ' ';
-                    }
-                }
+        if(token.range && START <= token.range[0] && token.range[1] <= END){
+            if(isFirst){
+                if(i > 0 && tokens[i-1].type === "WhiteSpace") result.push(tokens[i-1]);
+                isFirst = false;
             }
-
-            preToken = token;
             result.push(token);
         }
-        if(token.range[1] === END) break;
     }
     return result;
 }
@@ -134,7 +136,7 @@ function blockByCode(code, workspace, count=0){
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
         var ast = esprima.parseScript(code, { tolerant: true, tokens: true, loc:true });
-        tokens = addWhiteSpaces(ast.tokens);
+        tokens = createTokensWithWhiteSpace(ast.tokens);
     } catch (e) {
         let fixCode = parser.parse(code);
         return blockByCode(fixCode, workspace, count+1);
@@ -173,7 +175,7 @@ function codeToBlock(program, count=0) {
             tolerant: false
         };
         var ast = esprima.parseScript(program, options);
-        tokens = addWhiteSpaces(ast.tokens);
+        tokens = createTokensWithWhiteSpace(ast.tokens);
         currentWorkspace.clear();
     } catch (e) {
         const fixCode = trimError();
@@ -485,6 +487,7 @@ function emptyStatementBlock(statement){
  * @return {[type]}           [description]
  */
 function expressionStatementBlock(statement) {
+    console.log(createCodeByTokens(getTokensOfStatement(statement)));
     if(statement.expression.type === 'CallExpression' && statement.expression.callee.name === "_error"){
         let block = createBlock('expression_statement');
         block.setCode(statement.expression.arguments[0].value + "\n");
