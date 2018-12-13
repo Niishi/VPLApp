@@ -36,24 +36,31 @@ function isValidCode(code){
 
 function createTokensWithWhiteSpace(tokens){
     let result = [];
-    result.push(tokens[0]);
     for(let i = 0; i < tokens.length - 1; i++){
         token = tokens[i];
-        nextToken = tokens[i+1];
-        l1 = token.loc.start.line;
-        l2 = nextToken.loc.start.line;
-        c1 = token.loc.end.column;
-        c2 = nextToken.loc.end.column;
+        nextToken = tokens[i + 1];
+        let l1 = token.loc.start.line;
+        let l2 = nextToken.loc.start.line;
+        let c1 = token.loc.end.column;
+        let c2 = nextToken.loc.end.column;
 
-        start = token.range[1];
-        end = token.range[0];
         let w = "";
-        if(l1 !== l2) w += "\n";
-        for(let j = c1; j < c2; j++){
-            w += " ";
+        let start   = token.range[1];
+        let end     = nextToken.range[0];
+        if(i == 0){
+            for(let j = 0; j < c1; j++) w += ' ';
+            start = 0;
+            end = token.range[0];
+            result.push(createToken("WhiteSpace", w, [start, end]));
+            result.push(tokens[0]);
+        } else {
+            if(l1 !== l2) w += "\n";
+            for(let j = c1; j < c2; j++){
+                w += " ";
+            }
+            result.push(createToken("WhiteSpace", w, [start, end]));
+            result.push(nextToken);
         }
-        result.push(createToken("WhiteSpace", w, [start, end]));
-        result.push(tokens[i + 1]);
     }
     return result;
 }
@@ -93,13 +100,20 @@ function getTokensOfStatement(statement){
     return result;
 }
 
+function getWhiteSpaceTokens(tokens){
+    let result = [];
+    for(token of tokens){
+        if(token.type === "WhiteSpace") result.push(token);
+    }
+    return result;
+}
+
 /**
  * PEGjsのparserを生成して返す
  * @return {[type]} [description]
  */
 function createParser(){
     return peg.generate(fs.readFileSync("./pegjs_test/error_correction2.pegjs").toString());
-
 }
 const parser = createParser();
 /**
@@ -135,7 +149,7 @@ function blockByCode(code, workspace, count=0){
     setCurrentWorkspace(workspace);
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
-        var ast = esprima.parseScript(code, { tolerant: true, tokens: true, loc:true });
+        var ast = esprima.parseScript(code, { tolerant: true, tokens: true,range:true, loc:true });
         tokens = createTokensWithWhiteSpace(ast.tokens);
     } catch (e) {
         let fixCode = parser.parse(code);
@@ -154,8 +168,9 @@ var blockX = 100;
 var blockMargin = 30;
 let firstProgram1 = "";
 function codeToBlock(program, count=0) {
-    if(count > 2){
+    if (count > 2) {
         console.log("codeToBlock()が2回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
+        const editor = getAceEditor();
         editor.setValue(firstProgram1,-1);
         editor.moveCursorToPosition(bCursorPosition);
         return;
@@ -170,12 +185,14 @@ function codeToBlock(program, count=0) {
     try {
         const options = {
             loc: true,
+            range: true,
             tokens: true,
             comment: true,
             tolerant: false
         };
         var ast = esprima.parseScript(program, options);
         tokens = createTokensWithWhiteSpace(ast.tokens);
+
         currentWorkspace.clear();
     } catch (e) {
         const fixCode = trimError();
@@ -227,7 +244,6 @@ function blockByStatement(statement) {
         }
     }
     let block = null;
-    console.log(statement);
 
     switch(statement.type){
         case 'BlockStatement':
@@ -487,7 +503,6 @@ function emptyStatementBlock(statement){
  * @return {[type]}           [description]
  */
 function expressionStatementBlock(statement) {
-    console.log(createCodeByTokens(getTokensOfStatement(statement)));
     if(statement.expression.type === 'CallExpression' && statement.expression.callee.name === "_error"){
         let block = createBlock('expression_statement');
         block.setCode(statement.expression.arguments[0].value + "\n");
@@ -527,7 +542,7 @@ function forStatementBlock(statement) {
         combineStatementBlock(block, stmBlock, 3);
         return block;
     }
-    var block = createBlock('my_for');
+    var block       = createBlock('my_for');
     var initBlock   = blockByExpression(statement.init);
     var testBlock   = blockByExpression(statement.test);
     var updateBlock = blockByExpression(statement.update);
@@ -596,6 +611,7 @@ function functionDeclarationBlock(statement){
  * @return {[type]} if文ブロック
  */
 function ifStatementBlock(statement){
+    const whitespaceTokens = getWhiteSpaceTokens(getTokensOfStatement(statement));
     var block;
     if(statement.alternate === null){   //else文がない場合
         block = createBlock("controls_if");
@@ -610,6 +626,7 @@ function ifStatementBlock(statement){
         stmBlock = blockByStatement(statement.alternate);   //else文内のブロック作成
         combineStatementBlock(block, stmBlock, 2);
     }
+    block.whitespaces = whitespaceTokens;
     return block;
 }
 
@@ -690,6 +707,7 @@ function catchClauseBlock(statement){
 }
 
 function variableDeclarationBlock(statement) {
+    const whitespaceTokens = getWhiteSpaceTokens(getTokensOfStatement(statement));
     var firstBlock = null;
     var block = null;
     const kind = statement.kind;
@@ -702,7 +720,6 @@ function variableDeclarationBlock(statement) {
         }
         block = nextBlock;
     }
-
     return firstBlock;
 }
 

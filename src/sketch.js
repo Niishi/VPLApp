@@ -1,2 +1,5 @@
-x   = 0;
-xxx = 0;
+if (x == 0) {
+} else {
+  if (true) {
+  }
+}
