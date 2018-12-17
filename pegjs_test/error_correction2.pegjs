@@ -540,16 +540,11 @@ EOF
 
 PrimaryExpression
     = ThisToken {     return "this"; }
-  /* = ThisToken { return { type: "ThisExpression" }; } */
-  / "aaa" __ Expression __ "bbb"
-  /* / "#" __ Expression __ "bbb" */
-  / "bbb" __ Expression __ "#"
-  / "1" __ Expression __ "2"
   / Identifier
   / Literal
   / ArrayLiteral
   / ObjectLiteral
-  / "(" __ expression:Expression __ ")" { return "(" + (expression ? expression : "_") + ")"; }
+  / "(" __ expression:Expression? __ ")" { return "(" + (expression ? expression : "_") + ")"; }
 ArrayLiteral
   = code:("[" __ elision:(Elision __)? "]") {
       // return {
@@ -734,16 +729,16 @@ Arguments
     }
 
 ArgumentList
-    /* = head:AssignmentExpression? tail:(w1:__ "," w2:__ e:AssignmentExpression?{
+    = head:AssignmentExpression? tail:(w1:__ "," w2:__ e:AssignmentExpression?{
         return w1 + "," + w2 + (e ? e : "_")
     })*{
         let result = (head ? head : "_");
         return result + tail.join("");
-    } */
-    = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
+    }
+    /* = code:(head:AssignmentExpression __ "," __ tail:ArgumentList) {return code.join("");}
     / __ "," __ tail:ArgumentList {return "_," + tail;}
     / head:AssignmentExpression {return head;}
-    / __ {return "_";}
+    / __ {return "_";} */
 
 LeftHandSideExpression
   = CallExpression
@@ -1206,8 +1201,7 @@ ExpressionNoIn
 /* ----- A.4 Statements ----- */
 
 Statement
-  = "(" Expression ")"{return "ok"}
-  / Block
+  = Block
   / VariableStatement
   / EmptyStatement
   / ExpressionStatement

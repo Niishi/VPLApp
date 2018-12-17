@@ -45,22 +45,26 @@ function createTokensWithWhiteSpace(tokens){
         let c2 = nextToken.loc.end.column;
 
         let w = "";
-        let start   = token.range[1];
-        let end     = nextToken.range[0];
+        let start = 0;
+        let end = token.range[0];
         if(i == 0){
-            for(let j = 0; j < c1; j++) w += ' ';
-            start = 0;
-            end = token.range[0];
+            for(let j = 0; j < end; j++) w += ' ';
             result.push(createToken("WhiteSpace", w, [start, end]));
             result.push(tokens[0]);
-        } else {
-            if(l1 !== l2) w += "\n";
-            for(let j = c1; j < c2; j++){
-                w += " ";
-            }
-            result.push(createToken("WhiteSpace", w, [start, end]));
-            result.push(nextToken);
         }
+        start   = token.range[1];
+        end     = nextToken.range[0];
+        w = "";
+        const l = l2 - l1;
+        for(let j = 0; j < l; j++){
+            w += "\n";
+        }
+        for(let j = start; j < end - l; j++){
+            w += " ";
+        }
+        result.push(createToken("WhiteSpace", w, [start, end]));
+        result.push(nextToken);
+
     }
     return result;
 }
@@ -192,10 +196,8 @@ function codeToBlock(program, count=0) {
         };
         var ast = esprima.parseScript(program, options);
         tokens = createTokensWithWhiteSpace(ast.tokens);
-
         currentWorkspace.clear();
     } catch (e) {
-        console.log(e);
         const fixCode = trimError();
         codeToBlock(fixCode, count+1);
         return;
@@ -504,6 +506,8 @@ function emptyStatementBlock(statement){
  * @return {[type]}           [description]
  */
 function expressionStatementBlock(statement) {
+    const whitespaces = getWhiteSpaceTokens(getTokensOfStatement(statement));
+    console.log(whitespaces);
     if(statement.expression.type === 'CallExpression' && statement.expression.callee.name === "_error"){
         let block = createBlock('expression_statement');
         block.setCode(statement.expression.arguments[0].value + "\n");
@@ -513,6 +517,7 @@ function expressionStatementBlock(statement) {
     if(functionNameList.indexOf(exprBlock.type) !== -1) return exprBlock;
     if(statement.expression.type === 'CallExpression' ||
         statement.expression.type === 'AssignmentExpression'){
+            exprBlock.whitespaces = whitespaces;
         return exprBlock;
     }
     var block = createBlock('expression_statement');
@@ -857,6 +862,7 @@ function assignmentExpressionBlock(node, isStatement) {
         }
         var rightHandBlock = blockByExpression(node.right, false);
         combineIntoBlock(block, rightHandBlock,1);
+
         return block;
     }
 }
