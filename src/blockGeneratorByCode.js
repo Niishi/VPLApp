@@ -178,6 +178,7 @@ function codeToBlock(program, count=0) {
         tokens = createTokensWithWhiteSpace(ast.tokens);
         currentWorkspace.clear();
     } catch (e) {
+        console.log(e);
         const fixCode = trimError();
         codeToBlock(fixCode, count+1);
         return;
