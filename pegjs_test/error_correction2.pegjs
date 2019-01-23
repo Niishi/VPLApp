@@ -104,6 +104,8 @@
   function optionalList(value) {
     return value !== null ? value : [];
   }
+
+
 }
 
 Start
@@ -563,15 +565,15 @@ ArrayLiteral
 
 ElementList
   = head:(
-      elision:(e:Elision w:__{return e + w;})? element:AssignmentExpression {
+      elision:(e:Elision w:__{return e + w;})? element:AssignmentExpression? {
         // return optionalList(extractOptional(elision, 0)).concat(element);
-        return (elision ? elision : "")  + element;
+        return  (elision ? elision : "") + (element ? element : "_");
       }
     )
     tail:(
       w1:__ "," w2:__ elision:(e:Elision w:__{return e + w;})? element:AssignmentExpression {
         // return optionalList(extractOptional(elision, 0)).concat(element);
-        return w1 + "," + w2 + (elision ? elision : "") + element;
+        return w1 + "," + w2  +(elision ? elision : "") + (element ? element : "_");
       }
     )*
     {
@@ -643,9 +645,12 @@ MemberExpression
         PrimaryExpression
       / FunctionExpression
       / NewToken __ callee:MemberExpression __ args:Arguments {
-          return "new " + callee + "(" + args + ")";
+          return "new " + callee + args;
           // return { type: "NewExpression", callee: callee, argumFents: args };
         }
+      / NewToken __ callee:MemberExpression? __ args:Arguments? {
+          return "new " + (callee ? callee : "_") + (args ? args : "");
+      }
     )
     tail:(
         __ "[" __ property:Expression? __ "]" {
@@ -756,8 +761,8 @@ PostfixOperator
 
 UnaryExpression
   = PostfixExpression
-  / operator:UnaryOperator __  argument:(UnaryExpression) {
-      return operator + argument;
+  / operator:UnaryOperator __  argument:UnaryExpression? {
+      return operator + (argument ? argument : "_");
     }
 
 UnaryOperator
@@ -1056,12 +1061,15 @@ ConditionalExpression
     ":" __ alternate:AssignmentExpression
     {
         return test + " ? " + consequent + " : " + alternate;
-      // return {
-      //   type:       "ConditionalExpression",
-      //   test:       test,
-      //   consequent: consequent,
-      //   alternate:  alternate
-      // };
+    }
+  / test:LogicalORExpression? __
+    "?" __ consequent:AssignmentExpression? __
+    ":"? __ alternate:AssignmentExpression?
+    {
+        let result = (test ? test : "_") + "?";
+        result += (consequent ? consequent : "_") + ":";
+        result += (alternate ? alternate : "_");
+        return result;
     }
   / LogicalORExpression
 
@@ -1218,7 +1226,7 @@ Statement
   / DebuggerStatement
 
 Block
-  = "{" w2:__ body:(x:StatementList w:__{return x + w;})? "}" {
+  = "{" w2:__ body:(x:StatementList w:__{return x + w;})? "}"? {
       let result = "{" + w2 + (body ? body : "") + "}";
     return result;
   }
@@ -1299,8 +1307,8 @@ EmptyStatement
   /* = ";" { return { type: "EmptyStatement" }; } */
 
 ExpressionStatement
-  = !("{" / FunctionToken) code:(expression:Expression EOS){
-    return code.join("");
+  = !("{" / FunctionToken) expression:Expression semi:EOS?{
+    return expression + (semi ? semi : ";");
   }
 
 IfStatement
@@ -1372,21 +1380,25 @@ IterationStatement
   }
 
 
-  / code:(ForToken __
-    "(" __
-    init:(ExpressionNoIn __)? ";" __
-    test:(Expression __)? ";" __
-    update:(Expression __)?
-    ")" __
-    body:Statement)
+  / ForToken __
+    "("? __
+    init:(e:ExpressionNoIn w:__{return e + w;})? ";"? __
+    test:(e:Expression w:__{return e + w;})? ";"? __
+    update:(e:Expression w:__{return e + w;})?
+    ")"? __
+    body:Statement?
     {
-      return code.join("");
+        let result = "for(" + (init ? init : "_") + ";";
+        result += (test ? test : "_") + ";";
+        result += (update ? update : "_") +")";
+        result += (body ? body : "{}\n");
+        return result;
     }
   / code:(ForToken __
     "(" __
     VarKind __ declarations:VariableDeclarationListNoIn __ ";" __
     test:(e:Expression w:__{return e + w;})? ";" __
-    update:(Expression __)?
+    update:(e:Expression w:__{return e + w;})?
     ")" __
     body:Statement)
     {
@@ -1460,35 +1472,37 @@ WithStatement
     { return code; }
 
 SwitchStatement
-  = code:$(SwitchToken __ "(" __ discriminant:Expression __ ")" __
-    cases:CaseBlock)
+  = SwitchToken __ "("? __ discriminant:Expression? __ ")"? __
+    cases:CaseBlock
     {
-      return code;
+        return "switch(" + (discriminant ? discriminant : "_") + ")" + cases;
     }
 
 CaseBlock
-  = code:$("{" __ clauses:(CaseClauses __)? "}") {
-      return code;
-    }
-  / code:$("{" __
-    before:(CaseClauses __)?
-    default_:DefaultClause __
-    after:(CaseClauses __)? "}")
+  = "{"? __
+    before:(c:CaseClauses w:__{ return c + w; })?
+    default_:DefaultClause w1:__
+    after:(c:CaseClauses w:__{ return c + w; })? "}"?
     {
-      return code;
+        return "{" + (before ? before : "") + default_ + w1 + (after ? after : "") + "}"
     }
+
+  / "{"? w1:__ clauses:(c:CaseClauses w:__{return c + w;})? "}"? {
+      return "{" + w1 + (clauses ? clauses : "") + "}";
+    }
+
 
 CaseClauses
-  = code:$(head:CaseClause tail:(__ CaseClause)*) { return code; }
+  = head:CaseClause tail:(w:__ c:CaseClause{return w + c;})* { return head + tail.join(""); }
 
 CaseClause
-  = code:$(CaseToken __ test:Expression __ ":" consequent:(__ StatementList)?) {
-      return code;
+  = CaseToken w1:__ test:Expression? w2:__ ":"? consequent:(w:__ s:StatementList{ return w + s;})? {
+      return "case " + (test ? test : "_")  + " :" + (consequent ? consequent : "");
     }
 
 DefaultClause
-  = code:$(DefaultToken __ ":" consequent:(__ StatementList)?) {
-      return code;
+  = DefaultToken w1:__ ":"? consequent:(w:__ s:StatementList{return w + s;})? {
+      return "default" + w1 + ":" + (consequent ? consequent : "");
     }
 
 LabelledStatement
@@ -1526,11 +1540,12 @@ DebuggerStatement
 /* ----- A.5 Functions and Programs ----- */
 
 FunctionDeclaration
-  = code:$(FunctionToken __ id:Identifier __
+  = FunctionToken __ id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" __
-    "{" __ body:FunctionBody __ "}")
+    "{" __ body:FunctionBody __ "}"
     {
-      return code;
+        let result = "function " + id +"(" + params + "){" + (body ? body : "") + "}";
+        return result;
     }
   / FunctionToken __ id:(x:Identifier __{return x;})?
   "("? __ params:(x:FormalParameterList __{return x;})? ")"? __
