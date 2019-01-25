@@ -9,7 +9,17 @@
 /* ObjectExpression */
 
 /* FunctionExpression */
+x = function f(){
 
+};
+
+x = function(){
+
+};
+
+x = function(,,){
+
+};
 /* ArrowFunction未実装 */
 
 /*TaggedTemplateExpression未実装 */
@@ -201,3 +211,53 @@ if(){
 /* ReturnStatement */
 return;
 return x;
+
+
+/* SwitchStatement */
+switch(x){
+    case 1:
+    case 'a':
+    default:
+        x = 0;
+}
+
+switch(){
+    case :
+    default
+        x = ;
+}
+
+/* ThrowStatement */
+throw e;
+throw;
+/* TryStatement */
+try {
+
+} catch (e) {
+
+} finally {
+
+}
+
+try {
+
+} catch () {
+
+} finally {
+
+}
+
+/* VariableDeclaration */
+var x = 0;
+let   = 0;
+const x =  ;
+var   =  ;
+
+/* WhileStatement */
+while(x == 1){
+    print('x');
+}
+
+while(){
+
+}
