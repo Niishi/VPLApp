@@ -1,5 +1,6 @@
 Blockly.p5js['if'] = function(block) {
-  var value_condition = Blockly.p5js.valueToCode(block, 'condition', Blockly.p5js.ORDER_ATOMIC);
+  var value_condition = Blockly.p5js.valueToCode(block,
+                        'condition', Blockly.p5js.ORDER_ATOMIC);
   var statements_statement = Blockly.p5js.statementToCode(block, 'statement');
   var code = 'if (' + value_condition +') {\n';
   code += statements_statement;

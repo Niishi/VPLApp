@@ -1,3 +1,14 @@
+Blockly.p5js['logic_operation'] = function(block) {
+  // Operations 'and', 'or'.
+  var operator = (block.getFieldValue('OP') == 'AND') ? '&&' : '||';
+  var order = (operator == '&&') ? Blockly.p5js.ORDER_LOGICAL_AND :
+      Blockly.p5js.ORDER_LOGICAL_OR;
+  var argument0 = Blockly.p5js.valueToCode(block, 'A', order);
+  var argument1 = Blockly.p5js.valueToCode(block, 'B', order);
+  var code = argument0 + ' ' + operator + ' ' + argument1;
+  return [code, Blockly.p5js.ATOMIC];
+};
+
 Blockly.Names.equals = function(name1, name2) {
   return name1 == name2;
 };

@@ -142,6 +142,7 @@ function insertStr(str, index, insert) {
 }
 
 function blockByCode(code, workspace, count=0){
+    console.log(code);
     if(count > 1){
         console.log("blockByCode()が1回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         return "error";
@@ -153,18 +154,27 @@ function blockByCode(code, workspace, count=0){
     setCurrentWorkspace(workspace);
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
-        var ast = esprima.parseScript(code, { tolerant: true, tokens: true,range:true, loc:true });
+        var ast = esprima.parseScript(code, { tolerant: false, tokens: true,range:true, loc:true });
         tokens = createTokensWithWhiteSpace(ast.tokens);
     } catch (e) {
         let fixCode = parser.parse(code);
         return blockByCode(fixCode, workspace, count+1);
     }
+    let firstBlock = null;
+    let preBlock = null;
     for (statement of ast.body) {
         var block = blockByStatement(statement);
         if(block === null) continue;
-        return block;
+        if (preBlock === null) {
+            firstBlock = block;
+            preBlock = block;
+        }
+        else {
+            combineNextBlock(preBlock,block);
+        }
+        preBlock = block;
     }
-    return null;
+    return firstBlock;
 }
 
 var blockY = 0;
@@ -172,6 +182,7 @@ var blockX = 100;
 var blockMargin = 30;
 let firstProgram1 = "";
 function codeToBlock(program, count=0) {
+    console.log(program);
     if (count > 2) {
         console.log("codeToBlock()が2回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         const editor = getAceEditor();
@@ -507,7 +518,6 @@ function emptyStatementBlock(statement){
  */
 function expressionStatementBlock(statement) {
     const whitespaces = getWhiteSpaceTokens(getTokensOfStatement(statement));
-    console.log(whitespaces);
     if(statement.expression.type === 'CallExpression' && statement.expression.callee.name === "_error"){
         let block = createBlock('expression_statement');
         block.setCode(statement.expression.arguments[0].value + "\n");
@@ -532,7 +542,7 @@ function expressionStatementBlock(statement) {
  * @return {Block} block 生成したブロック
  */
 function forStatementBlock(statement) {
-    if(statement.init.type == 'VariableDeclaration'){
+    if(isExist(statement.init) && statement.init.type == 'VariableDeclaration'){
         var block       = createBlock('for_decl');
         var initBlock   = blockByStatement(statement.init);
         combineStatementBlock(block, initBlock, 0);
@@ -549,13 +559,20 @@ function forStatementBlock(statement) {
         return block;
     }
     var block       = createBlock('my_for');
-    var initBlock   = blockByExpression(statement.init);
-    var testBlock   = blockByExpression(statement.test);
-    var updateBlock = blockByExpression(statement.update);
+    console.log(statement);
+    if(statement.init){
+        var initBlock   = blockByExpression(statement.init);
+        combineIntoBlock(block, initBlock);
+    }
+    if(statement.test){
+        var testBlock   = blockByExpression(statement.test);
+        combineIntoBlock(block, testBlock);
+    }
+    if(statement.update){
+        var updateBlock = blockByExpression(statement.update);
+        combineIntoBlock(block, updateBlock);
+    }
     var stmBlock    = blockByStatement(statement.body);
-    combineIntoBlock(block, initBlock);
-    combineIntoBlock(block, testBlock);
-    combineIntoBlock(block, updateBlock);
     combineStatementBlock(block, stmBlock, 3);
     return block;
 }
@@ -797,6 +814,7 @@ function blockByExpression(expression, isStatement) {
         case 'UpdateExpression':
             return updateExpressionBlock(expression);
         default:
+            errorMessage(expression);
             errorMessage("blockByExpressionでエラー。該当しないExpression=>" + expression.type);
             return null;
     }
@@ -812,10 +830,14 @@ function arrayExpressionBlock(node){
     var block = createBlock("array_block");
     const elements = node.elements;
     block.createValueInput(elements.length);
+    let i = 1;
     for (element of elements) {
+        if(element === null){
+            i++;
+            continue;
+        }
         var argBlock = blockByExpression(element, false);
-        var index = getAkiIndex(block.inputList);
-        argBlock.outputConnection.connect(block.inputList[index].connection);
+        argBlock.outputConnection.connect(block.inputList[i++].connection);
     }
     return block;
 }
