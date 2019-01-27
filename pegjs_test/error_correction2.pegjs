@@ -1299,8 +1299,8 @@ EmptyStatement
   /* = ";" { return { type: "EmptyStatement" }; } */
 
 ExpressionStatement
-  = !("{" / FunctionToken) code:(expression:Expression EOS){
-    return code.join("");
+  = !("{" / FunctionToken) expression:Expression semi:EOS?{
+    return expression + ";";
   }
 
 IfStatement
@@ -1372,15 +1372,19 @@ IterationStatement
   }
 
 
-  / code:(ForToken __
-    "(" __
-    init:(ExpressionNoIn __)? ";" __
-    test:(Expression __)? ";" __
+  / ForToken __
+    "("? __
+    init:(ExpressionNoIn __)? ";"? __
+    test:(Expression __)? ";"? __
     update:(Expression __)?
-    ")" __
-    body:Statement)
+    ")"? __
+    body:Statement?
     {
-      return code.join("");
+        let result = "for(" + (init ? init : "") + ";";
+        result += (test ? test : "") + ";";
+        result += (update ? update : "") + ")";
+        result += (body ? body : "{}\n");
+        return result;
     }
   / code:(ForToken __
     "(" __
