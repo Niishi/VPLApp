@@ -310,12 +310,12 @@ HexDigit
   = [0-9a-f]i
 
 StringLiteral "string"
-  = '"' chars:DoubleStringCharacter* '"' {
+  = '"' chars:DoubleStringCharacter* '"'? {
       // return { type: "Literal", value: chars.join("") };
-      return chars.join("") ;
+      return '"' + chars.join("") + '"';
     }
-  / "'" chars:SingleStringCharacter* "'" {
-      return chars.join("") ;
+  / "'" chars:SingleStringCharacter* "'"? {
+      return "'" + chars.join("") + "'";
       // return { type: "Literal", value: chars.join("") };
     }
 
@@ -785,22 +785,15 @@ MultiplicativeExpression
         }else{
             return ope + "_";
         }
-    })*
-    {
+    })*{
         let result = (head ? head : "_");
         return result + tail.join(""); }
-
-
     / __?  ope:MultiplicativeOperator __ tail:(test:MultiplicativeExpression{
-        if(test){
-            return ope + test;
-        }else{
-            return ope + "_";
-        }
+        return test ? test : "_";
     })*{
-        return "_" + tail.join("");
+        return "_" + ope + (tail.length > 0 ? tail.join("") : "_");
     }
-    / UnaryExpression
+    /* / UnaryExpression */
 
     /* 以下のように書きたくなるが、「何もない状態」を受け付けてしまうので書けない */
 /* MultiplicativeExpression
@@ -830,7 +823,7 @@ AdditiveExpression
     })*{
         return "_" + tail.join("");
     }
-    / MultiplicativeExpression
+    /* / MultiplicativeExpression */
     /* = code:(MultiplicativeExpression __ AdditiveOperator __ tail:AdditiveExpression){return code.join("");}
     / __ ope:AdditiveOperator tail:AdditiveExpression{return "_" + ope + tail.join("");}
     / head:MultiplicativeExpression {return head;} */
