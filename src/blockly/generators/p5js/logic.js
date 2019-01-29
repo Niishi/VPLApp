@@ -30,7 +30,6 @@ goog.require('Blockly.p5js');
 
 
 Blockly.p5js['controls_if'] = function(block) {
-    console.log(block.whitespaces);
   // If/elseif/else condition.
   var n = 0;
   var code = '', branchCode, conditionCode;
