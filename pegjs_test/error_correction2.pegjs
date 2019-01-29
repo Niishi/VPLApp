@@ -310,12 +310,12 @@ HexDigit
   = [0-9a-f]i
 
 StringLiteral "string"
-  = '"' chars:DoubleStringCharacter* '"' {
+  = '"' chars:DoubleStringCharacter* '"'? {
       // return { type: "Literal", value: chars.join("") };
-      return chars.join("") ;
+      return '"' + chars.join("") + '"';
     }
-  / "'" chars:SingleStringCharacter* "'" {
-      return chars.join("") ;
+  / "'" chars:SingleStringCharacter* "'"? {
+      return "'" + chars.join("") + "'";
       // return { type: "Literal", value: chars.join("") };
     }
 
@@ -541,7 +541,7 @@ EOF
 /* ----- A.3 Expressions ----- */
 
 PrimaryExpression
-    = ThisToken {     return "this"; }
+    = ThisToken { return "this"; }
   / Identifier
   / Literal
   / ArrayLiteral
@@ -785,22 +785,15 @@ MultiplicativeExpression
         }else{
             return ope + "_";
         }
-    })*
-    {
+    })*{
         let result = (head ? head : "_");
         return result + tail.join(""); }
-
-
     / __?  ope:MultiplicativeOperator __ tail:(test:MultiplicativeExpression{
-        if(test){
-            return ope + test;
-        }else{
-            return ope + "_";
-        }
+        return test ? test : "_";
     })*{
-        return "_" + tail.join("");
+        return "_" + ope + (tail.length > 0 ? tail.join("") : "_");
     }
-    / UnaryExpression
+    /* / UnaryExpression */
 
     /* 以下のように書きたくなるが、「何もない状態」を受け付けてしまうので書けない */
 /* MultiplicativeExpression
@@ -830,7 +823,7 @@ AdditiveExpression
     })*{
         return "_" + tail.join("");
     }
-    / MultiplicativeExpression
+    /* / MultiplicativeExpression */
     /* = code:(MultiplicativeExpression __ AdditiveOperator __ tail:AdditiveExpression){return code.join("");}
     / __ ope:AdditiveOperator tail:AdditiveExpression{return "_" + ope + tail.join("");}
     / head:MultiplicativeExpression {return head;} */
@@ -1095,11 +1088,11 @@ AssignmentExpression
     {
         return code.join("");
     }
-  / code:(left:LeftHandSideExpression __
+  / left:LeftHandSideExpression? __
     operator:AssignmentOperator __
-    right:AssignmentExpression)
+    right:AssignmentExpression?
     {
-        return code.join("");
+        return (left ? left : "_") + operator + (right ? right : "_");
       // return {
       //   type:     "AssignmentExpression",
       //   operator: operator,
@@ -1378,6 +1371,22 @@ IterationStatement
       else result += "{}";
       return result;
   }
+  / ForToken __
+    "("? __
+    kind:VarKind __ declarations:VariableDeclarationListNoIn __ ";"? __
+    test:(e:Expression __{return e})? ";"? __
+    update:(e:Expression __{return e})?
+    ")"? __
+    body:Statement?
+    {
+        let result = "for(" + kind + " " + declarations + ";";
+        if(test) result += test;
+        result += ";";
+        if(update) result += update;
+        result += ")";
+        result += body ? body : "{}";
+        return result;
+    }
 
 
   / ForToken __
@@ -1403,22 +1412,6 @@ IterationStatement
     body:Statement)
     {
       return code.join("");
-    }
-  / ForToken __
-    "("? __
-    kind:VarKind __ declarations:VariableDeclarationListNoIn __ ";"? __
-    test:(e:Expression __{return e})? ";"? __
-    update:(e:Expression __{return e})?
-    ")"? __
-    body:Statement?
-    {
-        let result = "for(" + kind + " " + declarations + ";";
-        if(test) result += test;
-        result += ";";
-        if(update) result += update;
-        result += ")";
-        result += body ? body : "{}";
-        return result;
     }
   / code:$(ForToken __
     "(" __
@@ -1511,8 +1504,8 @@ LabelledStatement
     }
 
 ThrowStatement
-  = code:$(ThrowToken _ argument:Expression EOS) {
-      return code;
+  = ThrowToken _ argument:Expression? EOS? {
+      return "throw" + (argument ? argument : "_") + ";";
     }
 
 TryStatement
@@ -1527,8 +1520,8 @@ TryStatement
     }
 
 Catch
-  = code:$(CatchToken __ "(" __ param:Identifier __ ")" __ body:Block) {
-      return code;
+  = CatchToken w1:__ "("? w2:__ param:Identifier? w3:__ ")"? w4:__ body:Block? {
+      return "catch" + w1 + "(" + w2 + (param ? param : "_") + w3 + ")" + w4 + (body ? body : "{}\n");
     }
 
 Finally

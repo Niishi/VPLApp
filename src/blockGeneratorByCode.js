@@ -126,10 +126,23 @@ const parser = createParser();
  */
 function trimError() {
     const program = getAceEditor().getValue();
+    const startTime = performance.now();
     fixCode = parser.parse(program);
+    const endTime = performance.now();
+    console.log(roundFloat(endTime - startTime, 3) + "ms");
     return fixCode;
 }
 
+/**
+ * 小数点n位まで残す関数
+ * @param  {float} number 対象の数値
+ * @param  {int} n      残したい小数点以下の桁数
+ * @return {[type]}     小数点n位まで四捨五入した値
+ */
+function roundFloat(number, n){
+    var _pow = Math.pow(10, n);
+    return Math.round(number * _pow) / _pow;
+}
 /**
  * 文字列を指定した位置に挿入する。
  * @param  {string} str    挿入前の文字列
@@ -182,7 +195,7 @@ var blockX = 100;
 var blockMargin = 30;
 let firstProgram1 = "";
 function codeToBlock(program, count=0) {
-    console.log(program);
+    // console.log(program);
     if (count > 2) {
         console.log("codeToBlock()が2回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         const editor = getAceEditor();
