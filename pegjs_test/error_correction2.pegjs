@@ -150,7 +150,6 @@ SingleLineComment
 
 Identifier
   = !ReservedWord name:IdentifierName { return name; }
-  /"yuya" __ Expression __ "yamanashi" {return "OK";}
 
 IdentifierName "identifier"
   = code:$(head:IdentifierStart tail:IdentifierPart*) {
@@ -1082,11 +1081,11 @@ ConditionalExpressionNoIn
   / LogicalORExpressionNoIn
 
 AssignmentExpression
-  = code:(left:LeftHandSideExpression __
+  = left:LeftHandSideExpression? __
     "=" !"=" __
-    right:AssignmentExpression)
+    right:AssignmentExpression?
     {
-        return code.join("");
+        return (left ? left : "_") + " = " + (right ? right : "_");
     }
   / left:LeftHandSideExpression? __
     operator:AssignmentOperator __
@@ -1100,7 +1099,7 @@ AssignmentExpression
       //   right:    right
       // };
     }
-  / __ "=" !"=" __ right:AssignmentExpression
+  /* / __ "=" !"=" __ right:AssignmentExpression
   {
       return "_" + "=" + right;
   }
@@ -1111,7 +1110,7 @@ AssignmentExpression
   / __ "=" !"=" __
   {
       return "_" + "=" + "_";
-  }
+  } */
   / ConditionalExpression
 
 AssignmentExpressionNoIn

@@ -1,62 +1,157 @@
-var xpos = 255;
-var ypos = 25;
-var xspeed = 4;
-var yspeed = 4;
-var xposhand;
+fadeFrame;
+
+5;
+
+numModes;
+
+visualMode++;
+
+var particles = [];
+var nums;
+var particleDensity = 4000;
+var noiseScale = 800;
+var maxLife = 10;
+var simulationSpeed = 0.2;
+var fadeFrame = 0;
+var backgroundColor;
+var visualMode = 0;
+var numModes = 4;
+var invertColors = false;
 
 setup = function(){
-  var canvas = createCanvas(500, 500);
-  canvas.parent('sketch');
-  noStroke();
-  fill(random(255), random(255), random(255));
-  rectMode(CENTER);
+
+    nums = windowWidth * windowHeight / particleDensity ;
+    backgroundColor = color(20, 20, 20);createCanvas(windowWidth, windowHeight);
+  background(backgroundColor);
+  for (var i = 0; i < nums; i++ ) {
+
+       particles[i]=new Particle();}
 };
 
 draw = function(){
-  background(100, 95);
-  ellipse(xpos,ypos,50,50);
-  if (mouseX >= 40 && mouseX <= width - 40) {
-
-        xposhand = mouseX;} else {
-    if (mouseX < 40) {
-
-            xposhand = 40;} else {
-      if (mouseX > width - 40) {
-
-                xposhand = width - 40;}
-    }
-  }
-  rect(xposhand, height - 2.5, 80, 5);
-  xpos+=xspeed;ypos+=yspeed;if (xpos <= 25 || xpos >= width - 25) {
-    if (xspeed < 10 && xspeed > -10) {
-
-            xspeed = xspeed * -1.2;} else {
-
-            xspeed = xspeed * -1.01;}
-  }
-  if (ypos <= 25) {
-    if (yspeed < 10 && yspeed > -10) {
-
-            yspeed = yspeed * -1.2;} else {
-
-            yspeed = yspeed * -1.01;}
-  }
-  if (ypos >= height - 25) {
-    if (xpos <= xposhand + 65 && xpos >= xposhand - 65) {
-      if (yspeed < 10 && yspeed > -10) {
-
-                yspeed = yspeed * -1.2;} else {
-
-                yspeed = yspeed * -1.01;}
+  noStroke();
+  fadeFrame++;
+  if (0 == 0) {
+    if (invertColors) {
+      blendMode(ADD);
     } else {
-      textAlign(CENTER);
-      textFont('Open Sans');
-      textStyle(BOLD);
-      text('GAME OVER', width / 2, height / 2);
+      blendMode(DIFFERENCE);
     }
+    fill(1, 1, 1);
+    rect(0, 0, width, height);
+    if (invertColors) {
+      blendMode(DARKEST);
+    } else {
+      blendMode(LIGHTEST);
+    }
+    fill(backgroundColor);
+    rect(0, 0, width, height);
+  }
+  blendMode(BLEND);
+  smooth();
+  for (var i = 0; i < nums; i++ ) {
+    var iterations = map(i, 0, nums, 5, 1);
+    var radius = map(i, 0, nums, 2, 6);
+    particles[i].move(iterations);
+    particles[i].checkEdge();
+    var alpha = 255;
+    var particleColor;
+    var fadeRatio;
+
+       fadeRatio = min(particles[i].life * 5 / maxLife, 1);
+       fadeRatio = min(maxLife - particles[i].life * 5 / maxLife, fadeRatio);var colorCase = visualMode;
+    if (visualMode == 0) {
+
+          colorCase = int(particles[i].pos.x / width * 3) + 1;}
+    switch(colorCase){
+      case 1:
+        var lifeRatioGrayscale = min(255, 255 * particles[i].life / maxLife + red(backgroundColor));
+
+             particleColor = color(lifeRatioGrayscale, alpha * fadeRatio);break;
+      case 2:
+
+             particleColor = particles[i].color;break;
+      case 3:
+
+             particleColor = color(blue(particles[i].color) + 70, green(particles[i].color) + 20, red(particles[i].color) - 50);break;
+    }
+    if (invertColors) {
+
+          particleColor = color(255 - red(particleColor), 255 - green(particleColor), 255 - blue(particleColor));}
+    fill(red(particleColor), green(particleColor), blue(particleColor), alpha * fadeRatio);
+    particles[i].display(radius);
   }
 };
 
-mousePressed = function(){
-  fill(random(255), , random(255));
-};
+function Particle(){
+
+
+                                            this.vel=createVector(0, 0) ;
+    this.pos=createVector(random(0, width), random(0, height)) ;
+    this.life=random(0, maxLife) ;
+    this.flip=int(random(0, 2)) * 2 - 1 ;var randColor = int(random(0, 3));
+  switch(randColor){
+    case 0:
+
+          this.color=color(110, 57, 204) ;break;
+    case 1:
+
+          this.color=color(7, 153, 242) ;break;
+    case 2:
+
+          this.color=color(255, 255, 255) ;break;
+  }
+
+
+
+                          this.move=function( iterations){
+    if (this.life -= 0.01666 < 0) {
+      this.respawn();
+    }
+    while (iterations > 0) {
+      var angle = noise(this.pos.x / noiseScale, this.pos.y / noiseScale) * TWO_PI * noiseScale * this.flip;
+
+          this.vel.x=cos(angle);
+          this.vel.y=sin(angle);this.vel.mult(simulationSpeed);
+      this.pos.add(this.vel);
+      iterations--;
+    }
+  } ;
+
+     this.checkEdge=function( ){
+    if (this.pos.x > width || this.pos.x < 0 || this.pos.y > height || this.pos.y < 0) {
+      this.respawn();
+    }
+  } ;
+
+      this.respawn=function( ){
+
+       this.pos.x=random(0, width);
+       this.pos.y=random(0, height);
+       this.life=maxLife ;} ;
+
+     this.display=function( r){
+    ellipse(this.pos.x,this.pos.y,r,r);
+  } ;}
+
+function advanceVisual(){
+
+    visualMode = ;if (visualMode == 0) {
+
+       invertColors = !invertColors;
+       backgroundColor = invertColors ? color(235, 235, 235) : color(20, 20, 20) ;}
+  noiseSeed(random() * Number.MAX_SAFE_INTEGER);
+  background(backgroundColor);
+  for (var i = 0; i < nums; i++ ) {
+    particles[i].respawn();
+
+       particles[i].life=random(0, maxLife);}
+}
+
+function keyPressed(){
+  advanceVisual();
+}
+
+function touchStarted(){
+  advanceVisual();
+}

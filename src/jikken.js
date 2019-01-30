@@ -56,7 +56,7 @@ function sum(a){
 function timeMeasurement(){
     const N = 10;
     const I = 10;
-    let code = "if(){}";
+    let code = "=;";
     const aveTimes = [];
     for(i = 0; i < 5; i++){
         let times = [];
@@ -75,3 +75,47 @@ function timeMeasurement(){
     }
     console.log(aveTimes.join(","));
 }
+// function fibo(n){
+//     if(n == 0 || n == 1) return n;
+//     else return fibo(n-2) + fibo(n-1);
+// }
+// let time_ntimes_and_sets = function(f, n, sets){
+//     let iter = function(i, i_s, t, res, log){
+//         if(i < n){
+//             f(20);
+//             iter(i + 1, i_s, t, res, log);
+//         }else if(i_s < sets - 1){
+//             recent_t = performance.now();
+//             elapsed_time = recent_t - t;
+//             log.push(elapsed_time);
+//             iter(0, i_s + 1, recent_t, res, log);
+//         }else{
+//             recent_t = performance.now();
+//             elapsed_time = (recent_t - t);
+//             log.push(elapsed_time);
+//             for(time of log){
+//                 console.log(time);
+//             }
+//         }
+//     }
+//     t = performance.now();
+//     a = [];
+//     iter(0, 0, t, 0, a);
+// }
+// function timeMeasurement(){
+//     console.log("start");
+//     mytime();
+//     console.log("-------------------");
+//     time_ntimes_and_sets(fibo, 50, 20);
+// }
+//
+// function mytime(){
+//     for(i = 0; i < 20; i++){
+//         startTime = performance.now();
+//         for(j = 0; j < 50; j++){
+//             fibo(20);
+//         }
+//         endTime = performance.now();
+//         console.log(endTime - startTime);
+//     }
+// }
