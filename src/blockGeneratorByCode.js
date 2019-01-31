@@ -117,8 +117,8 @@ function getWhiteSpaceTokens(tokens){
  * @return {[type]} [description]
  */
 function createParser(){
-    // return peg.generate(fs.readFileSync("./pegjs_test/error_correction2.pegjs").toString());
-    return peg.generate(fs.readFileSync("./node_modules/pegjs/examples/javascript.pegjs").toString());
+    return peg.generate(fs.readFileSync("./pegjs_test/error_correction2.pegjs").toString());
+    // return peg.generate(fs.readFileSync("./node_modules/pegjs/examples/javascript.pegjs").toString());
 }
 const parser = createParser();
 /**
@@ -212,7 +212,6 @@ function codeToBlock(program, count=0) {
     }
     setCurrentWorkspace(workspace);
     try {
-        const fixCode = trimError();
         const options = {
             loc: true,
             range: true,
@@ -224,6 +223,7 @@ function codeToBlock(program, count=0) {
         tokens = createTokensWithWhiteSpace(ast.tokens);
         currentWorkspace.clear();
     } catch (e) {
+        const fixCode = trimError();
         codeToBlock(fixCode, count+1);
         return;
     }
