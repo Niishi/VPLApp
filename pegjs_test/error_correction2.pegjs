@@ -724,7 +724,7 @@ CallExpression
     }
 
 Arguments
-  = "(" args:(ArgumentList )? ")" {
+  = "(" args:(ArgumentList )? ")"? {
       let result = "(";
       if(args === "_") return result + ")";
       else result += args ? args : "";
@@ -733,7 +733,9 @@ Arguments
     }
 
 ArgumentList
-    = head:AssignmentExpression? tail:(w1:__ "," w2:__ e:AssignmentExpression?{
+    = head:AssignmentExpression? tail:(w1:__ ","? w2:__ e:AssignmentExpression{
+        return w1 + "," + w2 + e
+    } / w1:__ "," w2:__ e:AssignmentExpression?{
         return w1 + "," + w2 + (e ? e : "_")
     })*{
         let result = (head ? head : "_");
@@ -779,18 +781,12 @@ MultiplicativeExpression
   = head:UnaryExpression
     tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?
     {
-        if(test){
-            return ope + test;
-        }else{
-            return ope + "_";
-        }
+        return ope + (test ? test : "_");
     })*{
         let result = (head ? head : "_");
         return result + tail.join(""); }
-    / __?  ope:MultiplicativeOperator __ tail:(test:MultiplicativeExpression{
-        return test ? test : "_";
-    })*{
-        return "_" + ope + (tail.length > 0 ? tail.join("") : "_");
+    / __?  ope:MultiplicativeOperator __ tail:MultiplicativeExpression?{
+        return "_" + ope + (tail ? tail : "_");
     }
     /* / UnaryExpression */
 
@@ -812,8 +808,8 @@ MultiplicativeOperator
   / $("%" !"=")
 
 AdditiveExpression
-  = head:MultiplicativeExpression
-    tail:(__ ope:AdditiveOperator __ test:(MultiplicativeExpression)?{
+  /* = head:MultiplicativeExpression?
+    tail:(__ ope:AdditiveOperator __ test:(MultiplicativeExpression){
         return ope + (test ? test : "_");
     })*
     { return head + tail.join("") }
@@ -821,11 +817,11 @@ AdditiveExpression
         return ope + (test ? test : "_");
     })*{
         return "_" + tail.join("");
-    }
+    } */
     /* / MultiplicativeExpression */
-    /* = code:(MultiplicativeExpression __ AdditiveOperator __ tail:AdditiveExpression){return code.join("");}
-    / __ ope:AdditiveOperator tail:AdditiveExpression{return "_" + ope + tail.join("");}
-    / head:MultiplicativeExpression {return head;} */
+    = code:(MultiplicativeExpression __ AdditiveOperator __ tail:AdditiveExpression){return code.join("");}
+    / __ ope:AdditiveOperator tail:AdditiveExpression{return "_" + ope + tail;}
+    / head:MultiplicativeExpression {return head;}
 
 AdditiveOperator
   = $("+" ![+=])

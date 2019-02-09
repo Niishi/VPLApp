@@ -41,6 +41,10 @@ button, input, select, textarea {
     top: 40px;
     font-size: 18px;
     border-radius: 3px;
+    border: 2px solid #34495e;
+    margin: 3px 3px 3px 3px;
+    width: 400px;
+    height: 60px;
     visibility: hidden;
     z-index: 2;
 }

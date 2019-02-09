@@ -1,3 +1,15 @@
 if (x < 0) {
-  print(x);
+
+    x = -;}
+
+function fibo(n){
+  if (n == 0 || n == 1) {
+    return n;
+  } else {
+    return fibo(n - 1) + fibo(n - 2);
+  }
+}
+
+for (var i = 0; i < 10; i++ ) {
+  console.log(fibo(i));
 }

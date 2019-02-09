@@ -50,6 +50,16 @@ function onLoad() {
     editor.on('change', func1);
     // editor.getSelection().on('changeSelection', func2);
 
+    editor = ace.edit("blockTextBox");
+    editor.$blockScrolling = Infinity;
+    editor.getSession().setMode("ace/mode/javascript");
+    editor.setTheme("ace/theme/chrome");
+    editor.setFontSize(20);
+    editor.session.setOptions({
+        tabSize: 2,
+        useSoftTabs: true
+    });
+    editor.setHighlightActiveLine(false);
 }
 
 
