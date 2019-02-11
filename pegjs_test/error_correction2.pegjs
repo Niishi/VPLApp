@@ -779,13 +779,16 @@ UnaryOperator
 
 MultiplicativeExpression
   = head:UnaryExpression
-    tail:(__ ope:MultiplicativeOperator __ test:(UnaryExpression)?
+    tail:(__ ope:MultiplicativeOperator __ test:UnaryExpression?
     {
         return ope + (test ? test : "_");
-    })*{
+    })*
+    {
         let result = (head ? head : "_");
         return result + tail.join(""); }
-    / __?  ope:MultiplicativeOperator __ tail:MultiplicativeExpression?{
+    / __?  ope:MultiplicativeOperator
+    __ tail:MultiplicativeExpression?
+    {
         return "_" + ope + (tail ? tail : "_");
     }
     /* / UnaryExpression */
@@ -819,10 +822,17 @@ AdditiveExpression
         return "_" + tail.join("");
     } */
     /* / MultiplicativeExpression */
-    = code:(MultiplicativeExpression __ AdditiveOperator __ tail:AdditiveExpression){return code.join("");}
+    /* = code:(MultiplicativeExpression __ AdditiveOperator __ tail:AdditiveExpression){return code.join("");}
     / __ ope:AdditiveOperator tail:AdditiveExpression{return "_" + ope + tail;}
-    / head:MultiplicativeExpression {return head;}
-
+    / head:MultiplicativeExpression {return head;} */
+    = head:MultiplicativeExpression
+      tail:(__ ope:AdditiveOperator __ test:MultiplicativeExpression?{
+          return ope + (test ? test : "_");
+      })*
+      { return head + tail.join("") }
+      / __? ope:AdditiveOperator __ tail:AdditiveExpression{
+          return "_" + tail;
+      }
 AdditiveOperator
   = $("+" ![+=])
   / $("-" ![-=])
@@ -1095,18 +1105,6 @@ AssignmentExpression
       //   right:    right
       // };
     }
-  /* / __ "=" !"=" __ right:AssignmentExpression
-  {
-      return "_" + "=" + right;
-  }
-  / left:LeftHandSideExpression __ "="!"=" __
-  {
-      return left + "=" + "_";
-  }
-  / __ "=" !"=" __
-  {
-      return "_" + "=" + "_";
-  } */
   / ConditionalExpression
 
 AssignmentExpressionNoIn
@@ -1338,6 +1336,7 @@ IfStatement
        else result += "{}";
        return result;
    }
+
 
 IterationStatement
   = code:(DoToken __

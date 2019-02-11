@@ -3,6 +3,9 @@ const estraverse = require('estraverse');
 const prompt     = require('electron-prompt');
 const peg        = require("pegjs");
 
+const acornLoose = require('acorn-loose');
+
+let isEsprima = false;
 let tokens = [];    //構文解析した後のトークンが入る
 var currentWorkspace;
 let bCursorPosition = {row:0, column:0};
@@ -166,9 +169,13 @@ function blockByCode(code, workspace, count=0){
     }
     setCurrentWorkspace(workspace);
     try {
-         //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
-        var ast = esprima.parseScript(code, { tolerant: false, tokens: true,range:true, loc:true });
+        //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
+        if(isEsprima)
+            var ast = esprima.parseScript(code, { tolerant: false, tokens: true,range:true, loc:true });
+        else
+            var ast = acornLoose.parse(code);
     } catch (e) {
+        console.log(e);
         var fixedCode = parser.parse(code);
         return blockByCode(fixedCode, workspace, count+1);
     }
@@ -217,10 +224,14 @@ function codeToBlock(program, count=0) {
             comment: true,
             tolerant: false
         };
-        var ast = esprima.parseScript(program, options);
-        tokens = createTokensWithWhiteSpace(ast.tokens);
+        if(isEsprima)
+            var ast = esprima.parseScript(program, options);
+        else
+            var ast = acornLoose.parse(program);
+        // tokens = createTokensWithWhiteSpace(ast.tokens);
         currentWorkspace.clear();
     } catch (e) {
+        console.log(e);
         const fixedCode = fixCode();
         codeToBlock(fixedCode, count+1);
         return;
@@ -529,7 +540,7 @@ function emptyStatementBlock(statement){
  * @return {[type]}           [description]
  */
 function expressionStatementBlock(statement) {
-    const whitespaces = getWhiteSpaceTokens(getTokensOfStatement(statement));
+    // const whitespaces = getWhiteSpaceTokens(getTokensOfStatement(statement));
     if(statement.expression.type === 'CallExpression' && statement.expression.callee.name === "_error"){
         let block = createBlock('expression_statement');
         block.setCode(statement.expression.arguments[0].value + "\n");
@@ -539,7 +550,7 @@ function expressionStatementBlock(statement) {
     if(functionNameList.indexOf(exprBlock.type) !== -1) return exprBlock;
     if(statement.expression.type === 'CallExpression' ||
         statement.expression.type === 'AssignmentExpression'){
-            exprBlock.whitespaces = whitespaces;
+            // exprBlock.whitespaces = whitespaces;
         return exprBlock;
     }
     var block = createBlock('expression_statement');
@@ -646,7 +657,7 @@ function functionDeclarationBlock(statement){
  * @return {[type]} if文ブロック
  */
 function ifStatementBlock(statement){
-    const whitespaceTokens = getWhiteSpaceTokens(getTokensOfStatement(statement));
+    // const whitespaceTokens = getWhiteSpaceTokens(getTokensOfStatement(statement));
     var block;
     if(statement.alternate === null){   //else文がない場合
         block = createBlock("controls_if");
@@ -661,7 +672,7 @@ function ifStatementBlock(statement){
         stmBlock = blockByStatement(statement.alternate);   //else文内のブロック作成
         combineStatementBlock(block, stmBlock, 2);
     }
-    block.whitespaces = whitespaceTokens;
+    // block.whitespaces = whitespaceTokens;
     return block;
 }
 
@@ -975,6 +986,7 @@ function identifierBlock(node) {
             var block = createBlock("variable_event");
             block.getField("NAME").setValue("FRAMECOUNT");
             return block;
+        case '✖':
         case '_':
             return null;
         default:

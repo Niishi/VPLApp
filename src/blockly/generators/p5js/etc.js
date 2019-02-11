@@ -108,9 +108,11 @@ Blockly.p5js['assingment_expression_statement'] = function(block) {
             dropdown_op + "\n\n面倒くさくて実装していません。本当にごめんなさい。")
   }
   var value_val = Blockly.p5js.valueToCode(block, 'VAL', Blockly.p5js.ORDER_ATOMIC);
-  const w = block.whitespaces;
-  var code = w[0].value + variable_name + w[1].value + dropdown_op + w[2].value + value_val;
-  return code + w[3].value + ";";
+  // const w = block.whitespaces;
+  // var code = w[0].value + variable_name + w[1].value + dropdown_op + w[2].value + value_val;
+  // return code + w[3].value + ";";
+  const code = variable_name + " " + dropdown_op + " " + value_val + ";";
+  return code;
 };
 
 Blockly.p5js['member_block'] = function(block) {

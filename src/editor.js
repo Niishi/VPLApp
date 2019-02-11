@@ -14,7 +14,7 @@ function func1(e) {
             if(keyStack.length === 0){
                 const editor = getAceEditor();
                 const program = editor.getValue();
-                //codeToBlock(program);
+                codeToBlock(program);
                 keyStack = [];  //一応初期化
             }
         },KEY_TIME);
