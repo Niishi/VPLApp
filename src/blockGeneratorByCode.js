@@ -125,13 +125,13 @@ const parser = createParser();
  * PEGjsを用いて構文エラーのあるコードを書き換えて補完する
  * @return {string}       補完されたコード
  */
-function trimError() {
+function fixCode() {
     const program = getAceEditor().getValue();
     const startTime = performance.now();
-    fixCode = parser.parse(program);
+    fixedCode = parser.parse(program);
     const endTime = performance.now();
     console.log(roundFloat(endTime - startTime, 3) + "ms");
-    return fixCode;
+    return fixedCode;
 }
 
 /**
@@ -156,7 +156,6 @@ function insertStr(str, index, insert) {
 }
 
 function blockByCode(code, workspace, count=0){
-    console.log(code);
     if(count > 1){
         console.log("blockByCode()が1回以上呼ばれたので、これ以上の再帰呼び出しをやめます。");
         return "error";
@@ -169,10 +168,9 @@ function blockByCode(code, workspace, count=0){
     try {
          //オプションのtolerantをtrueにすることである程度の構文エラーに耐えられる
         var ast = esprima.parseScript(code, { tolerant: false, tokens: true,range:true, loc:true });
-        tokens = createTokensWithWhiteSpace(ast.tokens);
     } catch (e) {
-        let fixCode = parser.parse(code);
-        return blockByCode(fixCode, workspace, count+1);
+        var fixedCode = parser.parse(code);
+        return blockByCode(fixedCode, workspace, count+1);
     }
     let firstBlock = null;
     let preBlock = null;
@@ -223,8 +221,8 @@ function codeToBlock(program, count=0) {
         tokens = createTokensWithWhiteSpace(ast.tokens);
         currentWorkspace.clear();
     } catch (e) {
-        const fixCode = trimError();
-        codeToBlock(fixCode, count+1);
+        const fixedCode = fixCode();
+        codeToBlock(fixedCode, count+1);
         return;
     }
     let preBlock = null;
@@ -743,51 +741,61 @@ function catchClauseBlock(statement){
     return block;
 }
 
+function setFieldValue(block, name, value){
+    block.getField(name).setValue(value);
+}
+
 function variableDeclarationBlock(statement) {
-    const whitespaceTokens = getWhiteSpaceTokens(getTokensOfStatement(statement));
-    var firstBlock = null;
-    var block = null;
-    const kind = statement.kind;
+    let firstBlock = null;
+    let lastBlock = null;
+    let block = null;
+    const kind = statement.kind; //'var'か'let'か'const'か
+    const initExpr
+	  = statement.declarations.slice(-1)[0].init;//配列の最後にある初期化式
     for (declaration of statement.declarations) {
-        var nextBlock = variableDeclaratorBlock(declaration, kind);
-        if(block === null && nextBlock !== null){
-            firstBlock = nextBlock;
-        }else if(block !== null && nextBlock !== null){
-            combineNextBlock(block, nextBlock);
+        block =
+		variableDeclaratorBlock(declaration, kind, initExpr);
+        if(block !== null){
+            if(firstBlock === null)
+                firstBlock = block;
+            if(lastBlock !== null)
+                combineNextBlock(lastBlock, block);
+            lastBlock = block;
         }
-        block = nextBlock;
     }
     return firstBlock;
 }
-
-//NOTE idのBindingPatternに対応していない
-function variableDeclaratorBlock(statement, kind) {
+function variableDeclaratorBlock(statement, kind, initExpr) {
     if(statement.id.type === 'Identifier'){
         var name = statement.id.name;
         createVariable(name);
         var block = createBlock("var_decl");
         var variable = currentWorkspace.getVariable(name);
-        block.getField("NAME").setValue(variable.getId());
+		//blockの"NAME"という入力フィールドを第3引数の内容に更新する
+        setFieldValue(block, "NAME", variable.getId())
         switch(kind){
             case 'var':
-                block.getField('KIND').setValue('VAR');
+                setFieldValue(block, 'KIND', 'VAR');
                 break;
             case 'let':
-                block.getField('KIND').setValue('LET');
+                setFieldValue(block, 'KIND', 'LET');
                 break;
             case 'const':
-                block.getField('KIND').setValue('CONST');
+                setFieldValue(block, 'KIND', 'CONST');
                 break;
             default:
-                errorMessage('variableDeclaratorBlockにおいて以下の変数の種類が定義できません: ' + kind);
+                errorMessage('variableDeclaratorBlockにおいて' +
+				'以下の変数の種類が定義できません: ' + kind);
         }
-        if(statement.init !== null){
-            var rightHandBlock = blockByExpression(statement.init, false);
+        if(initExpr !== null){
+            const rightHandBlock = blockByExpression(initExpr);
             combineIntoBlock(block, rightHandBlock);
         }
         return block;
     }else{
-        errorMessage("VariableDeclaratorにおいて以下のタイプに対応していない : " + statement.id.type);
+        errorMessage('VariableDeclaratorにおいて' +
+		'以下のタイプに対応していない : ' + statement.id.type);
+		return null;
     }
 }
 /**
@@ -971,11 +979,9 @@ function identifierBlock(node) {
             return null;
         default:
             createVariable(node.name);
-            var variable = currentWorkspace.getVariable(node.name);
-            var block = new Blockly.BlockSvg(currentWorkspace, "variables_get");
-            block.getField("VAR").setValue(variable.getId());
-            block.initSvg();
-            block.render();
+            const variable = currentWorkspace.getVariable(node.name);
+            var block = createBlock("variables_get");
+            setFieldValue(block, "VAR", variable.getId());
             return block;
     }
 }

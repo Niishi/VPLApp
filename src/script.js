@@ -123,11 +123,42 @@ function getPropertyValue(elementName, propertyName){
 
 document.getElementById("blocklyDiv").ondblclick = function (event) {
     if(getPropertyValue("blockTextBox", "visibility") === 'hidden'){
-        blockTextBox.style.left = (event.pageX+30) + 'px';
+        blockTextBox.style.left = (event.pageX-200) + 'px';
         blockTextBox.style.top = (event.pageY+130) + 'px';
         blockTextBox.style.visibility = 'visible';
-        blockTextBox.value = "";
-        blockTextBox.focus();
+        // blockTextBox.value = "";
+        // blockTextBox.focus();
+        editor = ace.edit("blockTextBox");
+        editor.focus();
+        editor.setValue("");
+        editor.on("change",function(e){
+            let code = editor.getValue();
+            let newBlock = blockByCode(code, hiddenWorkspace);
+            if(newBlock === 'error'){
+                console.log("オワオワリ");
+            }else if(newBlock !== null) {
+                newBlock.moveBy(50, 100);
+                if(block) block.dispose();
+                block = newBlock;
+            }
+            if(e.action === "insert" && e.lines.length >= 2){   //エンターキーが押されたとき
+                if(block){
+                    hiddenWorkspace.clear();
+                    let newBlock = blockByCode(code, workspace);
+                    const x = parseInt(getPropertyValue("hiddenBlocklyDiv", "left"),10) + 50;
+                    const y = parseInt(getPropertyValue("hiddenBlocklyDiv", "top"),10) + 100;
+                    newBlock.moveBy(x,y);
+                    blockTextBox.style.visibility = 'hidden';
+                    hiddenBlocklyDiv.style.visibility = "hidden";
+                    var blocklyDiv = document.getElementById("blocklyDiv");
+                    blocklyDiv.style.filter = "";
+                }
+            }
+            if(e.keyCode === 108){
+                console.log(getSelectedBlock());
+            }
+
+        })
     }else{
         blockTextBox.style.visibility = 'hidden';
     }
@@ -153,9 +184,7 @@ document.onkeydown  = function (e) {
             // up arrow
             var prevConn = selectedBlock.previousConnection;
             if(prevConn !== null && prevConn.isConnected()){
-
                 var prevBlock = prevConn.targetBlock();
-
                 var prevprevConn = prevBlock.previousConnection;
                 var nextConn = selectedBlock.nextConnection;
                 prevConn.disconnect();
@@ -253,38 +282,38 @@ function insertTextBox(textBox, word){
 }
 
 let block = null;
-document.getElementById("blockTextBox").onkeyup = function(e){
-    let textBox = document.getElementById("blockTextBox");
-    const c = completion(e);    //'('や""などの補完作業を行う
-    if(c) insertTextBox(textBox, c);
-    let clientRect = textBox.getBoundingClientRect();
-    let code = textBox.value;
-    let newBlock = blockByCode(code, hiddenWorkspace);
-    if(newBlock === 'error'){
-        console.log("オワオワリ");
-    }else if(newBlock !== null) {
-        newBlock.moveBy(50, 100);
-        if(block) block.dispose();
-        block = newBlock;
-    }
-    if(e.keyCode === 13){   //エンターキーが押されたとき
-        if(block){
-            hiddenWorkspace.clear();
-            let newBlock = blockByCode(textBox.value, workspace);
-            const x = parseInt(getPropertyValue("hiddenBlocklyDiv", "left"),10) + 50;
-            const y = parseInt(getPropertyValue("hiddenBlocklyDiv", "top"),10) + 100;
-            newBlock.moveBy(x,y);
-            textBox.style.visibility = "hidden";
-            hiddenBlocklyDiv.style.visibility = "hidden";
-            var blocklyDiv = document.getElementById("blocklyDiv");
-            blocklyDiv.style.filter = "";
-        }
-    }
-    if(e.keyCode === 108){
-        console.log(getSelectedBlock());
-    }
-
-}
+// document.getElementById("blockTextBox").onkeyup = function(e){
+//     let textBox = document.getElementById("blockTextBox");
+//     const c = completion(e);    //'('や""などの補完作業を行う
+//     if(c) insertTextBox(textBox, c);
+//     let clientRect = textBox.getBoundingClientRect();
+//     let code = textBox.value;
+//     let newBlock = blockByCode(code, hiddenWorkspace);
+//     if(newBlock === 'error'){
+//         console.log("オワオワリ");
+//     }else if(newBlock !== null) {
+//         newBlock.moveBy(50, 100);
+//         if(block) block.dispose();
+//         block = newBlock;
+//     }
+//     if(e.keyCode === 13){   //エンターキーが押されたとき
+//         if(block){
+//             hiddenWorkspace.clear();
+//             let newBlock = blockByCode(textBox.value, workspace);
+//             const x = parseInt(getPropertyValue("hiddenBlocklyDiv", "left"),10) + 50;
+//             const y = parseInt(getPropertyValue("hiddenBlocklyDiv", "top"),10) + 100;
+//             newBlock.moveBy(x,y);
+//             textBox.style.visibility = "hidden";
+//             hiddenBlocklyDiv.style.visibility = "hidden";
+//             var blocklyDiv = document.getElementById("blocklyDiv");
+//             blocklyDiv.style.filter = "";
+//         }
+//     }
+//     if(e.keyCode === 108){
+//         console.log(getSelectedBlock());
+//     }
+//
+// }
 /**
  * 現在選択中のブロックを返す
  * @return {Blockly.BlockSvg} 選択ちゅうのブロック
