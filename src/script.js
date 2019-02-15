@@ -133,11 +133,15 @@ document.getElementById("blocklyDiv").ondblclick = function (event) {
         editor.setValue("");
         editor.on("change",function(e){
             let code = editor.getValue();
+            if(code === ""){
+                if(block) block.dispose();
+                return;
+            }
             let newBlock = blockByCode(code, hiddenWorkspace);
             if(newBlock === 'error'){
                 console.log("オワオワリ");
             }else if(newBlock !== null) {
-                newBlock.moveBy(50, 100);
+                newBlock.moveBy(50, 250);
                 if(block) block.dispose();
                 block = newBlock;
             }
@@ -176,7 +180,6 @@ document.getElementById("blocklyDiv").ondblclick = function (event) {
     }
 }
 
-//このままだとテキストエディタに入力しているときもイベントが発火してしまう
 document.onkeydown  = function (e) {
     var selectedBlock = getSelectedBlock();
     if(selectedBlock !== null){

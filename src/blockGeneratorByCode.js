@@ -5,7 +5,7 @@ const peg        = require("pegjs");
 
 const acornLoose = require('acorn-loose');
 
-let isEsprima = false;
+let isEsprima = true;
 let tokens = [];    //構文解析した後のトークンが入る
 var currentWorkspace;
 let bCursorPosition = {row:0, column:0};
@@ -196,8 +196,8 @@ function blockByCode(code, workspace, count=0){
     return firstBlock;
 }
 
-var blockY = 0;
-var blockX = 100;
+var blockY = 20;
+var blockX = 20;
 var blockMargin = 30;
 let firstProgram1 = "";
 function codeToBlock(program, count=0) {
@@ -585,15 +585,15 @@ function forStatementBlock(statement) {
     console.log(statement);
     if(statement.init){
         var initBlock   = blockByExpression(statement.init);
-        combineIntoBlock(block, initBlock);
+        combineIntoBlock(block, initBlock, 0);
     }
     if(statement.test){
         var testBlock   = blockByExpression(statement.test);
-        combineIntoBlock(block, testBlock);
+        combineIntoBlock(block, testBlock, 1);
     }
     if(statement.update){
         var updateBlock = blockByExpression(statement.update);
-        combineIntoBlock(block, updateBlock);
+        combineIntoBlock(block, updateBlock, 2);
     }
     var stmBlock    = blockByStatement(statement.body);
     combineStatementBlock(block, stmBlock, 3);
@@ -779,6 +779,7 @@ function variableDeclarationBlock(statement) {
 function variableDeclaratorBlock(statement, kind, initExpr) {
     if(statement.id.type === 'Identifier'){
         var name = statement.id.name;
+        if(name === '_') name = ' ';
         createVariable(name);
         var block = createBlock("var_decl");
         var variable = currentWorkspace.getVariable(name);
@@ -987,7 +988,7 @@ function identifierBlock(node) {
             block.getField("NAME").setValue("FRAMECOUNT");
             return block;
         case '✖':
-        case '_':
+        // case '_':
             return null;
         default:
             createVariable(node.name);

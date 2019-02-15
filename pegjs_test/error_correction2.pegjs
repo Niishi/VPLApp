@@ -1228,7 +1228,7 @@ StatementList
   = head:Statement tail:(w:__ x:Statement{return w + x})* { return head + tail.join(""); }
 
 VariableStatement
-  = code:(VarKind __ declarations:VariableDeclarationList x:EOS) {
+  = code:(VarKind __ declarations:VariableDeclarationList x:EOS?) {
     return code.join("");
   }
   /* = VarToken __ declarations:VariableDeclarationList EOS {

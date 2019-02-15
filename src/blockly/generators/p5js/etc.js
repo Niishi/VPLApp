@@ -111,7 +111,7 @@ Blockly.p5js['assingment_expression_statement'] = function(block) {
   // const w = block.whitespaces;
   // var code = w[0].value + variable_name + w[1].value + dropdown_op + w[2].value + value_val;
   // return code + w[3].value + ";";
-  const code = variable_name + " " + dropdown_op + " " + value_val + ";";
+  const code = variable_name + " " + dropdown_op + " " + value_val + ";\n";
   return code;
 };
 

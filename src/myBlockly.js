@@ -9,6 +9,51 @@ Blockly.p5js['logic_operation'] = function(block) {
   return [code, Blockly.p5js.ATOMIC];
 };
 
+Blockly.p5js['controls_if'] = function(block) {
+  // If/elseif/else condition.
+  var n = 0;
+  var code = '', branchCode, conditionCode;
+  do {
+    conditionCode = Blockly.p5js.valueToCode(block, 'IF' + n,
+      Blockly.p5js.ORDER_NONE);
+    branchCode = Blockly.p5js.statementToCode(block, 'DO' + n);
+    code += (n > 0 ? ' else ' : '') +
+        'if (' + conditionCode + ') {\n' + branchCode + '}';
+
+    ++n;
+  } while (block.getInput('IF' + n));
+
+  if (block.getInput('ELSE')) {
+    branchCode = Blockly.p5js.statementToCode(block, 'ELSE');
+    code += ' else {\n' + branchCode + '}';
+  }
+  return code + '\n';
+};
+
+Blockly.p5js['math_arithmetic'] = function(block) {
+  // Basic arithmetic operators, and power.
+  var OPERATORS = {
+    'ADD': [' + ', Blockly.p5js.ORDER_ADDITION],
+    'MINUS': [' - ', Blockly.p5js.ORDER_SUBTRACTION],
+    'MULTIPLY': [' * ', Blockly.p5js.ORDER_MULTIPLICATION],
+    'DIVIDE': [' / ', Blockly.p5js.ORDER_DIVISION],
+    'POWER': [null, Blockly.p5js.ORDER_COMMA]  // Handle power separately.
+  };
+  var tuple = OPERATORS[block.getFieldValue('OP')];
+  var operator = tuple[0];
+  var order = tuple[1];
+  var argument0 = Blockly.p5js.valueToCode(block, 'A', order);
+  var argument1 = Blockly.p5js.valueToCode(block, 'B', order);
+  var code;
+  // Power in p5js requires a special case since it has no operator.
+  if (!operator) {
+    code = 'Math.pow(' + argument0 + ', ' + argument1 + ')';
+    return [code, Blockly.p5js.ORDER_FUNCTION_CALL];
+  }
+  code = argument0 + operator + argument1;
+  return [code, Blockly.p5js.ORDER_ATOMIC];
+};
+
 Blockly.Names.equals = function(name1, name2) {
   return name1 == name2;
 };
