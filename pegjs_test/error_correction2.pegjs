@@ -765,6 +765,12 @@ UnaryExpression
   / operator:UnaryOperator __  argument:UnaryExpression? {
       return operator + (argument ? argument : "_");
     }
+  / $("-" !"=") WhiteSpace+ argument:UnaryExpression?{
+      return "_" + "-" + (argument ? argument : "_");
+  }
+  / $("-" !"=") argument:UnaryExpression?{
+      return "-" + (argument ? argument : "_");
+  }
 
 UnaryOperator
   = $DeleteToken
@@ -773,7 +779,6 @@ UnaryOperator
   / "++"
   / "--"
   / $("+" !"=")
-  / $("-" !"=")
   / "~"
   / "!"
 

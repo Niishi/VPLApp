@@ -988,7 +988,7 @@ function identifierBlock(node) {
             block.getField("NAME").setValue("FRAMECOUNT");
             return block;
         case '✖':
-        // case '_':
+        case '_':
             return null;
         default:
             createVariable(node.name);
@@ -1181,15 +1181,21 @@ function thisExpressionBlock(){
 }
 
 function unaryExpressionBlock(node) {
-    var block = createBlock('unary');
+    var block;
+    if(node.operator !== "+") block = createBlock('unary');
     var argBlock = blockByExpression(node.argument, false);
-    combineIntoBlock(block, argBlock);
     switch (node.operator) {
         case '-':
             block.getField('OP').setValue('MINUS');
             break;
         case '+':
-            block.getField('OP').setValue('PLUS');
+            /* 特別な規則を設定。単項演算子UnaryExpressionは+であまり使われないのでBinaryExpressionと解釈*/
+            block = createBlock("math_arithmetic");
+            block.getField("OP").setValue("ADD");
+            combineIntoBlock(block, argBlock, 1);
+            return block;
+            /*
+            block.getField('OP').setValue('PLUS');*/
             break;
         case '~':
             block.getField('OP').setValue('CHILDA');
@@ -1209,14 +1215,17 @@ function unaryExpressionBlock(node) {
         default:
             errorMessage("UnaryExpressionで定義されていないoperator : " + node.operator);
     }
+    combineIntoBlock(block, argBlock);
     return block;
 }
 
 function updateExpressionBlock(node) {
     var block = createBlock("updateexpression");
     var arg = node.argument;
-    createVariable(arg.name);
-    var variable = currentWorkspace.getVariable(arg.name);
+    name = arg.name;
+    if(name === '_') name = ' ';
+    createVariable(name);
+    var variable = currentWorkspace.getVariable(name);
     block.getField("VAR").setValue(variable.getId());
     if(node.operator === '++'){
         block.getField('OPE').setValue('INC');
